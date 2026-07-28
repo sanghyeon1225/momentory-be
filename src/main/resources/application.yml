@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: momentory-be
+  datasource:
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:momentory}}
+    username: ${POSTGRES_USER:momentory}
+    password: ${POSTGRES_PASSWORD:momentory}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  ai:
+    model:
+      chat: ${SPRING_AI_MODEL_CHAT:none}
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:}
+        chat:
+          model: ${GEMINI_MODEL:gemini-2.5-flash}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
