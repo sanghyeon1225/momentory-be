@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: momentory-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - momentory-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  app:
+    image: ${APP_IMAGE}
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/${POSTGRES_DB}}
+      DB_USERNAME: ${DB_USERNAME:-${POSTGRES_USER}}
+      DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD}}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    restart: unless-stopped
+
+volumes:
+  momentory-postgres-data:
+    name: momentory-postgres-data
