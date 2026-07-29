@@ -4,4 +4,7 @@ out/
 .idea/
 *.iml
 .env
-
+.env.*
+!.env.local.example
+!.env.prod.example
+*.pem
