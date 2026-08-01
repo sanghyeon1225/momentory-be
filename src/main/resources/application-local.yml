@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env.local[.properties]
   datasource:
     url: jdbc:postgresql://localhost:5432/${POSTGRES_DB:momentory}
     username: ${POSTGRES_USER:momentory}
