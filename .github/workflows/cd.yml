@@ -70,11 +70,17 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           python3 - <<'PY'
+          import base64
           import json
           import os
 
           region = os.environ["AWS_REGION"]
           registry = os.environ["ECR_REGISTRY"]
+
+          with open("compose.prod.yml", "rb") as compose_file:
+              compose_base64 = base64.b64encode(
+                  compose_file.read()
+              ).decode("ascii")
 
           commands = [
               "set -eu",
@@ -82,7 +88,13 @@ jobs:
                   f"aws ecr get-login-password --region {region} "
                   f"| docker login --username AWS --password-stdin {registry}"
               ),
+              "mkdir -p /home/ubuntu/momentory",
+              (
+                  f"printf '%s' '{compose_base64}' "
+                  "| base64 -d > /home/ubuntu/momentory/compose.prod.yml"
+              ),
               "cd /home/ubuntu/momentory",
+              "docker compose --env-file .env -f compose.prod.yml config --quiet",
               "docker compose --env-file .env -f compose.prod.yml pull app",
               "docker compose --env-file .env -f compose.prod.yml up -d app",
               "deadline=$(( $(date +%s) + 60 ))",
