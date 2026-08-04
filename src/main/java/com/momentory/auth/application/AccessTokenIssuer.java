@@ -1,7 +1,7 @@
 package com.momentory.auth.application;
 
-import com.momentory.auth.domain.MemberRole;
 import com.momentory.auth.security.JwtProperties;
+import com.momentory.user.domain.UserRole;
 import org.springframework.stereotype.Component;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -24,10 +24,14 @@ public class AccessTokenIssuer {
         this.jwtProperties = jwtProperties;
     }
 
-    public String issueAccessToken(Long memberId, MemberRole role) {
+    public String issueAccessToken(Long userId, UserRole role) {
+        return issue(userId, role).value();
+    }
+
+    public IssuedAccessToken issue(Long userId, UserRole role) {
         Instant issuedAt = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .subject(memberId.toString())
+                .subject(userId.toString())
                 .claim("role", role.name())
                 .issuer(jwtProperties.issuer())
                 .audience(List.of(jwtProperties.audience()))
@@ -37,6 +41,7 @@ public class AccessTokenIssuer {
                 .build();
         JwsHeader headers = JwsHeader.with(MacAlgorithm.HS256).build();
 
-        return jwtEncoder.encode(JwtEncoderParameters.from(headers, claims)).getTokenValue();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(headers, claims)).getTokenValue();
+        return new IssuedAccessToken(token, jwtProperties.accessTokenExpiration());
     }
 }

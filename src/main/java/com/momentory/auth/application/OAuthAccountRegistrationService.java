@@ -1,0 +1,33 @@
+package com.momentory.auth.application;
+
+import com.momentory.user.domain.OAuthAccount;
+import com.momentory.user.domain.OAuthProvider;
+import com.momentory.user.domain.User;
+import com.momentory.user.infrastructure.OAuthAccountRepository;
+import com.momentory.user.infrastructure.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class OAuthAccountRegistrationService {
+
+    private final UserRepository userRepository;
+    private final OAuthAccountRepository oauthAccountRepository;
+
+    public OAuthAccountRegistrationService(
+            UserRepository userRepository,
+            OAuthAccountRepository oauthAccountRepository
+    ) {
+        this.userRepository = userRepository;
+        this.oauthAccountRepository = oauthAccountRepository;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Long createUserAndAccount(String providerUserId, String email) {
+        User user = userRepository.save(User.create());
+        OAuthAccount account = OAuthAccount.create(user, OAuthProvider.KAKAO, providerUserId, email);
+        oauthAccountRepository.saveAndFlush(account);
+        return user.getId();
+    }
+}

@@ -11,15 +11,15 @@ class AuthenticationTestController {
 
     @GetMapping("/test-auth/me")
     TestResponse me(@Login LoginPrincipal principal) {
-        return new TestResponse(principal.memberId(), principal.role().name());
+        return new TestResponse(principal.userId(), principal.role().name());
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/test-auth/admin")
     TestResponse admin(@Login LoginPrincipal principal) {
-        return new TestResponse(principal.memberId(), principal.role().name());
+        return new TestResponse(principal.userId(), principal.role().name());
     }
 
-    record TestResponse(Long memberId, String role) {
+    record TestResponse(Long userId, String role) {
     }
 }
