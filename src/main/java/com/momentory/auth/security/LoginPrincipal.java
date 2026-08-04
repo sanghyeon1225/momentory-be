@@ -1,9 +1,9 @@
 package com.momentory.auth.security;
 
-import com.momentory.auth.domain.MemberRole;
+import com.momentory.user.domain.UserRole;
 
 public record LoginPrincipal(
-        Long memberId,
-        MemberRole role
+        Long userId,
+        UserRole role
 ) {
 }

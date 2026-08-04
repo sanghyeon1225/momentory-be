@@ -15,7 +15,15 @@ jwt:
   issuer: momentory-api
   audience: momentory-app
   access-token-expiration: 30m
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION}
   secret: ${JWT_SECRET}
+
+kakao:
+  api:
+    base-url: ${KAKAO_API_BASE_URL:https://kapi.kakao.com}
+    app-id: ${KAKAO_APP_ID}
+    connect-timeout: ${KAKAO_CONNECT_TIMEOUT:3s}
+    read-timeout: ${KAKAO_READ_TIMEOUT:5s}
 
 springdoc:
   api-docs:

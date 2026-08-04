@@ -28,6 +28,6 @@ public final class LoginAuthenticationToken extends AbstractAuthenticationToken 
 
     @Override
     public String getName() {
-        return principal.memberId().toString();
+        return principal.userId().toString();
     }
 }

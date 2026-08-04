@@ -1,6 +1,6 @@
 package com.momentory.auth.security;
 
-import com.momentory.auth.domain.MemberRole;
+import com.momentory.user.domain.UserRole;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,24 +13,24 @@ public final class JwtLoginAuthenticationConverter implements Converter<Jwt, Abs
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
-        Long memberId = parseMemberId(jwt.getSubject());
-        MemberRole role = parseRole(jwt.getClaimAsString("role"));
+        Long userId = parseUserId(jwt.getSubject());
+        UserRole role = parseRole(jwt.getClaimAsString("role"));
 
-        LoginPrincipal principal = new LoginPrincipal(memberId, role);
+        LoginPrincipal principal = new LoginPrincipal(userId, role);
         return new LoginAuthenticationToken(principal, List.of(new SimpleGrantedAuthority("ROLE_" + role.name())));
     }
 
-    private Long parseMemberId(String subject) {
+    private Long parseUserId(String subject) {
         try {
             return Long.valueOf(subject);
         } catch (NumberFormatException exception) {
-            throw new InvalidBearerTokenException("JWT subject must be a member ID", exception);
+            throw new InvalidBearerTokenException("JWT subject must be a user ID", exception);
         }
     }
 
-    private MemberRole parseRole(String role) {
+    private UserRole parseRole(String role) {
         try {
-            return MemberRole.valueOf(role);
+            return UserRole.valueOf(role);
         } catch (IllegalArgumentException | NullPointerException exception) {
             throw new InvalidBearerTokenException("JWT role is invalid", exception);
         }

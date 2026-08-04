@@ -1,8 +1,8 @@
 package com.momentory.auth;
 
 import com.momentory.auth.application.AccessTokenIssuer;
-import com.momentory.auth.domain.MemberRole;
 import com.momentory.auth.security.JwtProperties;
+import com.momentory.user.domain.UserRole;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,13 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.web.context.WebApplicationContext;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.time.Instant;
 import java.util.List;
@@ -29,11 +35,24 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 
 @SpringBootTest(properties = {
         "JWT_SECRET=JZP9amP0y2bXk2LG9f9piS5jH3vK9B5w7qxgEriqMA4=",
-        "spring.flyway.enabled=false",
-        "spring.autoconfigure.exclude=org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration"
+        "JWT_REFRESH_EXPIRATION=30d",
+        "KAKAO_APP_ID=123456789"
 })
 @Import(AuthenticationTestConfiguration.class)
+@Testcontainers(disabledWithoutDocker = true)
 class JwtAuthenticationIntegrationTest {
+
+    @Container
+    private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+            DockerImageName.parse("pgvector/pgvector:pg17")
+    );
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRES::getUsername);
+        registry.add("spring.datasource.password", POSTGRES::getPassword);
+    }
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -72,11 +91,11 @@ class JwtAuthenticationIntegrationTest {
 
     @Test
     void validTokenAuthenticatesAndInjectsLoginPrincipal() throws Exception {
-        String accessToken = accessTokenIssuer.issueAccessToken(42L, MemberRole.USER);
+        String accessToken = accessTokenIssuer.issueAccessToken(42L, UserRole.USER);
 
         mockMvc.perform(get("/test-auth/me").header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.memberId").value(42))
+                .andExpect(jsonPath("$.userId").value(42))
                 .andExpect(jsonPath("$.role").value("USER"));
     }
 
@@ -89,9 +108,12 @@ class JwtAuthenticationIntegrationTest {
 
     @Test
     void tamperedTokenReturns401() throws Exception {
-        String token = accessTokenIssuer.issueAccessToken(42L, MemberRole.USER);
-        char lastCharacter = token.charAt(token.length() - 1);
-        String tamperedToken = token.substring(0, token.length() - 1) + (lastCharacter == 'A' ? 'B' : 'A');
+        String token = accessTokenIssuer.issueAccessToken(42L, UserRole.USER);
+        String[] parts = token.split("\\.");
+        String signature = parts[2];
+        char firstCharacter = signature.charAt(0);
+        String tamperedSignature = (firstCharacter == 'A' ? 'B' : 'A') + signature.substring(1);
+        String tamperedToken = parts[0] + "." + parts[1] + "." + tamperedSignature;
 
         expectAuthenticationRequired(tamperedToken);
     }
@@ -112,7 +134,7 @@ class JwtAuthenticationIntegrationTest {
 
     @Test
     void userTokenCannotAccessAdminEndpoint() throws Exception {
-        String accessToken = accessTokenIssuer.issueAccessToken(42L, MemberRole.USER);
+        String accessToken = accessTokenIssuer.issueAccessToken(42L, UserRole.USER);
 
         mockMvc.perform(get("/test-auth/admin").header(HttpHeaders.AUTHORIZATION, bearer(accessToken)))
                 .andExpect(status().isForbidden())
@@ -131,7 +153,7 @@ class JwtAuthenticationIntegrationTest {
         Instant issuedAt = expiresAt.isBefore(now) ? expiresAt.minusSeconds(60) : now.minusSeconds(60);
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject("42")
-                .claim("role", MemberRole.USER.name())
+                .claim("role", UserRole.USER.name())
                 .issuer(issuer)
                 .audience(List.of(audience))
                 .issuedAt(issuedAt)
