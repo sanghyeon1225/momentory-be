@@ -8,83 +8,166 @@ Momentory backend.
 - Spring Boot 4.1
 - Gradle Kotlin DSL
 - PostgreSQL
-- JPA
+- Spring Data JPA
 - Flyway
+- Spring Security
+- springdoc-openapi
 - Docker
 
-## Specification
+## Non-negotiable safeguards
 
-Before implementing a feature:
+- Do not change API paths, HTTP methods, request/response fields, status codes, or error codes without approval.
+- Never edit an already-applied Flyway migration; add a new migration for schema changes.
+- Never trust a user ID supplied in a request body for current-user operations; obtain it from the authenticated principal.
+- Never commit secrets, `.env`, private keys, tokens, or passwords, or log tokens, personal diary content, or other sensitive user data.
+- Do not delete tests, weaken assertions, or add `@Disabled` merely to pass the build.
+- Do not run `git reset --hard`, `git clean -fd`, or destructive Git, Docker, or database commands without explicit approval.
 
-- Read the related API and feature specifications through Notion MCP.
-- Do not guess undocumented requirements.
-- Do not change API paths, request/response fields, status codes, or error codes without approval.
-- If the specification and code conflict, report it before implementing.
-- If Notion cannot be accessed, say so instead of pretending it was checked.
+## Working Principles
 
-## Development Principles
+Before modifying code:
 
-- State important assumptions before non-trivial work.
-- Prefer the simplest implementation that satisfies the requirement.
-- Do not modify or refactor unrelated code.
-- Follow the existing project style.
-- Every changed line must relate to the requested task.
-- Define success criteria and verify them with tests.
+- Inspect the relevant existing code and tests and follow existing coding style and naming conventions.
+- Do not guess requirements affecting API contracts, persistence, security, or business behavior; ask when they conflict or remain ambiguous.
+- Prefer the simplest implementation that satisfies the requirement, and do not modify or refactor unrelated code.
 
-## Object-Oriented Design
+## Package Architecture
 
-- Keep business rules close to the domain object that owns them.
-- Protect entity state and avoid public setters.
-- Prefer intention-revealing methods over external state manipulation.
-- Application services coordinate use cases; domain objects enforce business rules.
-- Do not create abstractions or value objects without a clear domain benefit.
+The project uses feature-centered packages inside each top-level domain.
 
-## DDD
+```text
+com.momentory
+├─ auth
+│  ├─ kakao
+│  │  ├─ application
+│  │  ├─ infrastructure
+│  │  └─ presentation
+│  ├─ token
+│  │  ├─ domain
+│  │  ├─ application
+│  │  ├─ infrastructure
+│  │  └─ presentation
+│  ├─ logout
+│  │  ├─ application
+│  │  └─ presentation
+│  ├─ presentation
+│  └─ security
+│
+├─ user
+│  ├─ domain
+│  ├─ infrastructure
+│  ├─ application
+│  ├─ me
+│  │  ├─ application
+│  │  └─ presentation
+│  └─ onboarding
+│     ├─ application
+│     └─ presentation
+│
+├─ common
+└─ config
+```
 
-- Organize code by domain, not only by technical layer.
-- Keep aggregate boundaries small and based on consistency requirements.
-- Modify aggregates through their aggregate root.
-- Reference other aggregates by ID when direct object navigation is unnecessary.
-- Use repositories for aggregate roots, not automatically for every table.
-- Apply DDD selectively; do not force patterns onto simple CRUD.
+Rules:
 
-## EDA
+- Place feature-specific code inside its feature package; add shared code only for genuinely shared concepts.
+- Do not move code to a shared package merely to avoid imports.
+- Do not accumulate unrelated features in top-level `application` or `presentation`, create unnecessary subpackages such as `controller`, `request`, `response`, or `service`, or add package layers without a clear responsibility.
+- Tests should generally follow the same package structure as production code.
 
-- Use events only when asynchronous separation provides a clear benefit.
-- Prefer synchronous calls when immediate results or strong consistency are required.
-- Use past-tense event names such as `DiaryCompleted`.
-- Event handlers must consider duplicate delivery and retries.
-- Do not add Kafka or RabbitMQ unless the use case justifies the complexity.
+## Dependency Direction
 
-## API and Persistence
+- `presentation` handles HTTP concerns and calls `application`; controllers contain no business logic and do not access repositories directly.
+- `application` coordinates use cases, transactions, domain objects, repositories, and external clients.
+- `application` must not depend on `presentation`.
+- `domain` must not depend on `application`, `presentation`, or infrastructure implementations; `infrastructure` may depend on domain types.
+- Avoid circular dependencies and direct sibling-feature dependencies unless they represent a genuine shared capability.
 
-- Controllers must not access repositories directly.
-- Do not expose JPA entities through APIs.
-- Separate request and response DTOs.
-- Use Bean Validation.
-- Manage production schema changes with new Flyway migrations.
-- Never edit an already-applied migration.
-- Avoid eager loading as a generic solution to N+1 problems.
+## Domain Design
 
-## Security
+- Organize code around domains and features rather than only technical layers.
+- Keep business rules close to their owning domain object. Protect entity state and avoid public setters.
+- Change entity state through intention-revealing methods.
+- Do not expose mutable internal collections; use defensive copies when receiving or returning them.
+- Application services coordinate use cases; domain objects protect their invariants.
+- Keep aggregate boundaries small and consistency-based. Modify aggregate state through its root, reference another aggregate by ID when navigation is unnecessary, and use repositories for aggregate roots or meaningful persistence boundaries.
+- Apply DDD selectively; do not treat every JPA entity as an aggregate or force complex patterns onto simple CRUD.
+- Do not introduce interfaces, factories, strategies, ports, value objects, or domain events without a concrete benefit. Prefer cohesive, readable classes and avoid duplicated validation, mapping, and conversion logic.
 
-- Never commit secrets, `.env`, private keys, tokens, or passwords.
-- Do not log tokens, personal diary content, or sensitive user data.
-- Do not expose PostgreSQL port 5432 publicly.
-- Do not use destructive Docker or database commands without explicit approval.
+## Transactions
+
+- Define transaction boundaries in application use-case methods.
+- Do not use controllers as transaction boundaries.
+- Changes that must succeed or fail together must run in one transaction; verify rollback behavior when multiple entities or collections change.
+- Define repeated-request and idempotency behavior, and consider concurrency, when a database constraint or business invariant can be violated.
+- Do not add pessimistic locking without a concrete consistency requirement.
+
+## API and Error Handling
+
+- Do not expose JPA entities through APIs; separate request and response DTOs.
+- Use Java records for DTOs when consistent with existing code, and use Bean Validation for request-format validation.
+- Keep business-state validation in the domain or application layer.
+- Preserve the existing `{ "code", "message" }` error-response contract.
+- Do not catch broad `Exception` types without a clear boundary-level reason or expose stack traces, SQL, internal class names, or sensitive values.
+- A `204 No Content` response must not contain a response body.
+
+## OpenAPI
+
+- Swagger/OpenAPI documentation must match actual runtime behavior.
+- Success responses must reference the correct success DTO; error responses must explicitly reference the actual error DTO.
+- Do not let springdoc infer a success DTO for an error status, and document only status codes the API can return.
+- A `204` response must not define a content schema. When changing OpenAPI annotations, verify `/v3/api-docs`.
+
+## JPA and Flyway
+
+- Persist enums using `EnumType.STRING` and prefer lazy loading.
+- Do not use eager loading as a generic N+1 solution.
+- Review fetch joins and projections for the use case, and keep database constraints aligned with application validation.
+- Review PK, FK, UNIQUE, NOT NULL, CHECK, deletion policies, cascade, and orphan removal explicitly.
+- Verify that Flyway migrations and JPA mappings match, and consider existing production data when adding constraints or non-null columns.
+
+## Time Policy
+
+- Use `Asia/Seoul` as the application local-time policy and centralize its identifier in `TimeZonePolicy`.
+- Store absolute timestamps such as `createdAt` and `updatedAt` as `Instant`, with Hibernate JDBC time-zone handling in UTC.
+- Use `LocalTime` for user-selected wall-clock values such as reflection time, and strictly parse exact `HH:mm` input.
+- Do not convert `Instant` to `LocalDateTime` merely for convenience.
+
+## Security and Privacy
+
+- Do not weaken authentication or validation to make tests pass.
+
+## Testing
+
+- Add tests that cover changed behavior, relevant boundary and invalid-input cases, and shared-feature regressions.
+- Cover authentication or authorization when applicable.
+- Assert database state and rollback behavior when persistence or transactions matter; an HTTP status assertion alone is insufficient.
+- Prefer integration tests for JPA, Flyway, security, transactions, and API contracts, and focused domain tests for domain invariants.
 
 ## Verification
 
-After changes:
+Run the required full verification:
+
+Windows:
+
+```powershell
+.\gradlew.bat clean check
+```
+
+Unix-like environments:
 
 ```bash
-./gradlew check
+./gradlew clean check
 ```
-Do not claim tests passed unless they were actually run.
 
-At completion, briefly report:
+For non-trivial backend delivery, follow `momentory-backend-delivery` for the detailed implementation, independent-review, diff-review, and verification loop. Never report tests or verification as successful unless they were actually executed and passed; report commands that could not be run and their impact.
 
-- Changed files
-- Main implementation details
-- Tests executed and results
-- Remaining risks or unclear requirements
+## Git Safety
+
+- Do not commit, push, merge, rebase, or amend unless explicitly requested.
+- Do not discard existing user changes. Include untracked source, test, and migration files during review.
+- Organize commits by meaningful behavior or architectural purpose, not mechanically by file type.
+
+## Completion Report
+
+Report implemented behavior, created/modified/deleted files, commands actually run and their results, remaining risks or unclear requirements, and whether the changes are ready to commit, open as a PR, or merge. For non-trivial backend delivery, include the additional report items required by `momentory-backend-delivery`.
