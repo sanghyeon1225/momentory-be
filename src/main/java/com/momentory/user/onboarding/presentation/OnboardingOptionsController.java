@@ -1,7 +1,11 @@
 package com.momentory.user.onboarding.presentation;
 
+import com.momentory.auth.presentation.AuthErrorResponse;
 import com.momentory.user.onboarding.application.OnboardingOptionsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -25,8 +29,31 @@ public class OnboardingOptionsController {
     @Operation(summary = "온보딩 선택지 조회")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "선택지 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 필요")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "선택지 조회 성공",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = OnboardingOptionsResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "AUTHENTICATION_REQUIRED",
+                                    value = """
+                                            {
+                                              "code": "AUTHENTICATION_REQUIRED",
+                                              "message": "인증이 필요합니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
     })
     @GetMapping(value = "/options", produces = MediaType.APPLICATION_JSON_VALUE)
     public OnboardingOptionsResponse getOptions() {

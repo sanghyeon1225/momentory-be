@@ -2,6 +2,7 @@ package com.momentory.auth.kakao.presentation;
 
 import com.momentory.auth.kakao.application.KakaoLoginResult;
 import com.momentory.auth.kakao.application.KakaoLoginService;
+import com.momentory.auth.presentation.AuthErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -50,10 +51,116 @@ public class KakaoLoginController {
                                     """)
                     )
             ),
-            @ApiResponse(responseCode = "400", description = "요청 Access Token 누락 또는 공백"),
-            @ApiResponse(responseCode = "401", description = "카카오 토큰 검증 실패"),
-            @ApiResponse(responseCode = "502", description = "카카오 API 서버 또는 응답 오류"),
-            @ApiResponse(responseCode = "503", description = "카카오 API 네트워크 오류")
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "VALIDATION_ERROR",
+                                            value = """
+                                                    {
+                                                      "code": "INVALID_REQUEST",
+                                                      "message": "accessToken은 필수입니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "UNREADABLE_REQUEST",
+                                            value = """
+                                                    {
+                                                      "code": "INVALID_REQUEST",
+                                                      "message": "잘못된 요청입니다."
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "카카오 토큰 검증 실패",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "KAKAO_TOKEN_INVALID",
+                                            value = """
+                                                    {
+                                                      "code": "KAKAO_TOKEN_INVALID",
+                                                      "message": "카카오 인증에 실패했습니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "KAKAO_APP_ID_MISMATCH",
+                                            value = """
+                                                    {
+                                                      "code": "KAKAO_APP_ID_MISMATCH",
+                                                      "message": "카카오 인증에 실패했습니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "KAKAO_USER_ID_MISMATCH",
+                                            value = """
+                                                    {
+                                                      "code": "KAKAO_USER_ID_MISMATCH",
+                                                      "message": "카카오 인증에 실패했습니다."
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "502",
+                    description = "카카오 API 서버 또는 응답 오류",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "KAKAO_API_SERVER_ERROR",
+                                            value = """
+                                                    {
+                                                      "code": "KAKAO_API_SERVER_ERROR",
+                                                      "message": "카카오 서비스에 일시적인 오류가 발생했습니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "KAKAO_API_RESPONSE_ERROR",
+                                            value = """
+                                                    {
+                                                      "code": "KAKAO_API_RESPONSE_ERROR",
+                                                      "message": "카카오 서비스 응답을 처리할 수 없습니다."
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "503",
+                    description = "카카오 API 네트워크 오류",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "KAKAO_API_NETWORK_ERROR",
+                                    value = """
+                                            {
+                                              "code": "KAKAO_API_NETWORK_ERROR",
+                                              "message": "카카오 서비스에 연결할 수 없습니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
     })
     @PostMapping(value = "/kakao", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public KakaoLoginResponse login(@Valid @RequestBody KakaoLoginRequest request) {

@@ -2,8 +2,12 @@ package com.momentory.user.onboarding.presentation;
 
 import com.momentory.auth.security.Login;
 import com.momentory.auth.security.LoginPrincipal;
+import com.momentory.auth.presentation.AuthErrorResponse;
 import com.momentory.user.onboarding.application.CompleteOnboardingService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -29,9 +33,59 @@ public class UserOnboardingController {
     @Operation(summary = "온보딩 완료 또는 갱신")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "온보딩 저장 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @ApiResponse(responseCode = "401", description = "인증 필요")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "온보딩 저장 성공",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = CompleteOnboardingResponse.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = OnboardingErrorResponse.class),
+                            examples = {
+                                    @ExampleObject(
+                                            name = "VALIDATION_ERROR",
+                                            value = """
+                                                    {
+                                                      "code": "INVALID_REQUEST",
+                                                      "message": "nickname은 필수입니다."
+                                                    }
+                                                    """
+                                    ),
+                                    @ExampleObject(
+                                            name = "UNREADABLE_REQUEST",
+                                            value = """
+                                                    {
+                                                      "code": "INVALID_REQUEST",
+                                                      "message": "잘못된 요청입니다."
+                                                    }
+                                                    """
+                                    )
+                            }
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 필요",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            examples = @ExampleObject(
+                                    name = "AUTHENTICATION_REQUIRED",
+                                    value = """
+                                            {
+                                              "code": "AUTHENTICATION_REQUIRED",
+                                              "message": "인증이 필요합니다."
+                                            }
+                                            """
+                            )
+                    )
+            )
     })
     @PutMapping(value = "/onboarding", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public CompleteOnboardingResponse complete(
