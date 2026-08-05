@@ -1,0 +1,203 @@
+package com.momentory.config;
+
+import com.momentory.MomentoryApplication;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+
+import java.util.Iterator;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest(
+        classes = MomentoryApplication.class,
+        properties = {
+                "JWT_SECRET=JZP9amP0y2bXk2LG9f9piS5jH3vK9B5w7qxgEriqMA4=",
+                "JWT_REFRESH_EXPIRATION=30d",
+                "KAKAO_APP_ID=123456789"
+        }
+)
+@Testcontainers(disabledWithoutDocker = true)
+class OpenApiContractIntegrationTest {
+
+    @Container
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+            DockerImageName.parse("pgvector/pgvector:pg17")
+    );
+
+    @DynamicPropertySource
+    static void configureDataSource(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRES::getUsername);
+        registry.add("spring.datasource.password", POSTGRES::getPassword);
+    }
+
+    @Autowired
+    WebApplicationContext webApplicationContext;
+
+    @Autowired
+    ObjectMapper objectMapper;
+
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+    }
+
+    @Test
+    void documentsResponseSchemasAndErrorExamplesForPublicApis() throws Exception {
+        JsonNode apiDocs = getApiDocs();
+
+        assertResponseSchema(apiDocs, "/api/v1/auth/kakao", "post", "200", "KakaoLoginResponse");
+        assertErrorResponse(apiDocs, "/api/v1/auth/kakao", "post", "400", "AuthErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/auth/kakao", "post", "401", "AuthErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/auth/kakao", "post", "502", "AuthErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/auth/kakao", "post", "503", "AuthErrorResponse");
+
+        assertResponseSchema(apiDocs, "/api/v1/auth/reissue", "post", "200", "RefreshTokenReissueResponse");
+        assertErrorResponse(apiDocs, "/api/v1/auth/reissue", "post", "400", "AuthErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/auth/reissue", "post", "401", "AuthErrorResponse");
+
+        assertNoResponseContent(apiDocs, "/api/v1/auth/logout", "post", "204");
+        assertErrorResponse(apiDocs, "/api/v1/auth/logout", "post", "400", "AuthErrorResponse");
+    }
+
+    @Test
+    void documentsResponseSchemasAndErrorExamplesForProtectedApis() throws Exception {
+        JsonNode apiDocs = getApiDocs();
+
+        assertResponseSchema(apiDocs, "/api/v1/users/me", "get", "200", "UserMeResponse");
+        assertErrorResponse(apiDocs, "/api/v1/users/me", "get", "401", "AuthErrorResponse");
+
+        assertResponseSchema(apiDocs, "/api/v1/users/me/onboarding", "put", "200", "CompleteOnboardingResponse");
+        assertErrorResponse(apiDocs, "/api/v1/users/me/onboarding", "put", "400", "OnboardingErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/users/me/onboarding", "put", "401", "AuthErrorResponse");
+
+        assertResponseSchema(apiDocs, "/api/v1/onboarding/options", "get", "200", "OnboardingOptionsResponse");
+        assertErrorResponse(apiDocs, "/api/v1/onboarding/options", "get", "401", "AuthErrorResponse");
+    }
+
+    @Test
+    void documentsOnlyImplementedErrorStatusCodesAndSharedErrorProperties() throws Exception {
+        JsonNode apiDocs = getApiDocs();
+
+        for (ApiOperation operation : ApiOperation.values()) {
+            JsonNode responses = operationResponses(apiDocs, operation.path(), operation.method());
+            assertThat(responses.has("403")).isFalse();
+            assertThat(responses.has("404")).isFalse();
+            assertThat(responses.has("409")).isFalse();
+            assertThat(responses.has("500")).isFalse();
+        }
+
+        assertErrorSchemaProperties(apiDocs, "AuthErrorResponse");
+        assertErrorSchemaProperties(apiDocs, "OnboardingErrorResponse");
+    }
+
+    private JsonNode getApiDocs() throws Exception {
+        MvcResult result = mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString());
+    }
+
+    private void assertResponseSchema(
+            JsonNode apiDocs,
+            String path,
+            String method,
+            String responseCode,
+            String expectedSchema
+    ) {
+        JsonNode response = response(apiDocs, path, method, responseCode);
+        assertThat(response.at("/content/application~1json/schema/$ref").stringValue())
+                .isEqualTo("#/components/schemas/" + expectedSchema);
+    }
+
+    private void assertErrorResponse(
+            JsonNode apiDocs,
+            String path,
+            String method,
+            String responseCode,
+            String expectedSchema
+    ) {
+        JsonNode response = response(apiDocs, path, method, responseCode);
+        assertResponseSchema(apiDocs, path, method, responseCode, expectedSchema);
+
+        JsonNode examples = response.at("/content/application~1json/examples");
+        assertThat(examples.isObject()).isTrue();
+        Iterator<Map.Entry<String, JsonNode>> iterator = examples.properties().iterator();
+        assertThat(iterator.hasNext()).isTrue();
+        while (iterator.hasNext()) {
+            JsonNode value = iterator.next().getValue().path("value");
+            assertThat(value.path("code").isTextual()).isTrue();
+            assertThat(value.path("message").isTextual()).isTrue();
+        }
+    }
+
+    private void assertNoResponseContent(JsonNode apiDocs, String path, String method, String responseCode) {
+        assertThat(response(apiDocs, path, method, responseCode).has("content")).isFalse();
+    }
+
+    private void assertErrorSchemaProperties(JsonNode apiDocs, String schemaName) {
+        JsonNode properties = apiDocs.at("/components/schemas/" + schemaName + "/properties");
+        assertThat(properties.has("code")).isTrue();
+        assertThat(properties.has("message")).isTrue();
+    }
+
+    private JsonNode response(JsonNode apiDocs, String path, String method, String responseCode) {
+        JsonNode response = operationResponses(apiDocs, path, method).path(responseCode);
+        assertThat(response.isObject()).isTrue();
+        return response;
+    }
+
+    private JsonNode operationResponses(JsonNode apiDocs, String path, String method) {
+        JsonNode responses = apiDocs.at("/paths/" + escapeJsonPointer(path) + "/" + method + "/responses");
+        assertThat(responses.isObject()).isTrue();
+        return responses;
+    }
+
+    private String escapeJsonPointer(String value) {
+        return value.replace("~", "~0").replace("/", "~1");
+    }
+
+    private enum ApiOperation {
+        KAKAO_LOGIN("/api/v1/auth/kakao", "post"),
+        TOKEN_REISSUE("/api/v1/auth/reissue", "post"),
+        LOGOUT("/api/v1/auth/logout", "post"),
+        USER_ME("/api/v1/users/me", "get"),
+        ONBOARDING_COMPLETE("/api/v1/users/me/onboarding", "put"),
+        ONBOARDING_OPTIONS("/api/v1/onboarding/options", "get");
+
+        private final String path;
+        private final String method;
+
+        ApiOperation(String path, String method) {
+            this.path = path;
+            this.method = method;
+        }
+
+        String path() {
+            return path;
+        }
+
+        String method() {
+            return method;
+        }
+    }
+}
