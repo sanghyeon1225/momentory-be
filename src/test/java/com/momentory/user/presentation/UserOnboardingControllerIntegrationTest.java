@@ -1,6 +1,7 @@
 package com.momentory.user.presentation;
 
 import com.momentory.auth.application.AccessTokenIssuer;
+import com.momentory.common.time.TimeZonePolicy;
 import com.momentory.user.domain.Gender;
 import com.momentory.user.domain.InterestArea;
 import com.momentory.user.domain.User;
@@ -35,6 +36,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -114,6 +116,8 @@ class UserOnboardingControllerIntegrationTest {
         assertThat(persistedUser.requiresOnboarding()).isFalse();
         assertThat(persistedUser.getCreatedAt()).isNotNull();
         assertThat(persistedUser.getUpdatedAt()).isNotNull();
+        assertThat(TimeZone.getDefault().toZoneId()).isEqualTo(TimeZonePolicy.DEFAULT_ZONE_ID);
+        assertThat(objectMapper.serializationConfig().getTimeZone().toZoneId()).isEqualTo(TimeZonePolicy.DEFAULT_ZONE_ID);
         mockMvc.perform(get("/api/v1/users/me")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessTokenIssuer.issueAccessToken(user.getId(), user.getRole())))
                 .andExpect(status().isOk())
