@@ -74,9 +74,11 @@ class OpenApiContractIntegrationTest {
         assertResponseSchema(apiDocs, "/api/v1/auth/reissue", "post", "200", "RefreshTokenReissueResponse");
         assertErrorResponse(apiDocs, "/api/v1/auth/reissue", "post", "400", "AuthErrorResponse");
         assertErrorResponse(apiDocs, "/api/v1/auth/reissue", "post", "401", "AuthErrorResponse");
+        assertOperationTag(apiDocs, "/api/v1/auth/reissue", "post", "Authentication");
 
         assertNoResponseContent(apiDocs, "/api/v1/auth/logout", "post", "204");
         assertErrorResponse(apiDocs, "/api/v1/auth/logout", "post", "400", "AuthErrorResponse");
+        assertOperationTag(apiDocs, "/api/v1/auth/logout", "post", "Authentication");
     }
 
     @Test
@@ -92,6 +94,21 @@ class OpenApiContractIntegrationTest {
 
         assertResponseSchema(apiDocs, "/api/v1/onboarding/options", "get", "200", "OnboardingOptionsResponse");
         assertErrorResponse(apiDocs, "/api/v1/onboarding/options", "get", "401", "AuthErrorResponse");
+
+        assertResponseSchema(apiDocs, "/api/v1/schedules", "get", "200", "ScheduleListResponse");
+        assertErrorResponse(apiDocs, "/api/v1/schedules", "get", "400", "ScheduleErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/schedules", "get", "401", "AuthErrorResponse");
+        assertResponseSchema(apiDocs, "/api/v1/schedules", "post", "201", "ScheduleResponse");
+        assertErrorResponse(apiDocs, "/api/v1/schedules", "post", "400", "ScheduleErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/schedules", "post", "401", "AuthErrorResponse");
+        assertResponseSchema(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "200", "ScheduleResponse");
+        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "400", "ScheduleErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "401", "AuthErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "404", "ScheduleErrorResponse");
+        assertNoResponseContent(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "204");
+        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "400", "ScheduleErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "401", "AuthErrorResponse");
+        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "404", "ScheduleErrorResponse");
     }
 
     @Test
@@ -101,13 +118,16 @@ class OpenApiContractIntegrationTest {
         for (ApiOperation operation : ApiOperation.values()) {
             JsonNode responses = operationResponses(apiDocs, operation.path(), operation.method());
             assertThat(responses.has("403")).isFalse();
-            assertThat(responses.has("404")).isFalse();
             assertThat(responses.has("409")).isFalse();
             assertThat(responses.has("500")).isFalse();
+            if (!operation.allowsNotFound()) {
+                assertThat(responses.has("404")).isFalse();
+            }
         }
 
         assertErrorSchemaProperties(apiDocs, "AuthErrorResponse");
         assertErrorSchemaProperties(apiDocs, "OnboardingErrorResponse");
+        assertErrorSchemaProperties(apiDocs, "ScheduleErrorResponse");
     }
 
     private JsonNode getApiDocs() throws Exception {
@@ -154,6 +174,11 @@ class OpenApiContractIntegrationTest {
         assertThat(response(apiDocs, path, method, responseCode).has("content")).isFalse();
     }
 
+    private void assertOperationTag(JsonNode apiDocs, String path, String method, String expectedTag) {
+        assertThat(apiDocs.at("/paths/" + escapeJsonPointer(path) + "/" + method + "/tags/0").stringValue())
+                .isEqualTo(expectedTag);
+    }
+
     private void assertErrorSchemaProperties(JsonNode apiDocs, String schemaName) {
         JsonNode properties = apiDocs.at("/components/schemas/" + schemaName + "/properties");
         assertThat(properties.has("code")).isTrue();
@@ -182,7 +207,11 @@ class OpenApiContractIntegrationTest {
         LOGOUT("/api/v1/auth/logout", "post"),
         USER_ME("/api/v1/users/me", "get"),
         ONBOARDING_COMPLETE("/api/v1/users/me/onboarding", "put"),
-        ONBOARDING_OPTIONS("/api/v1/onboarding/options", "get");
+        ONBOARDING_OPTIONS("/api/v1/onboarding/options", "get"),
+        SCHEDULES_GET("/api/v1/schedules", "get"),
+        SCHEDULES_POST("/api/v1/schedules", "post"),
+        SCHEDULES_PATCH("/api/v1/schedules/{scheduleId}", "patch"),
+        SCHEDULES_DELETE("/api/v1/schedules/{scheduleId}", "delete");
 
         private final String path;
         private final String method;
@@ -198,6 +227,10 @@ class OpenApiContractIntegrationTest {
 
         String method() {
             return method;
+        }
+
+        boolean allowsNotFound() {
+            return this == SCHEDULES_PATCH || this == SCHEDULES_DELETE;
         }
     }
 }
