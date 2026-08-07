@@ -90,7 +90,7 @@ class ScheduleControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.displayOrder").value(1));
 
-        assertThat(scheduleRepository.findByUser_IdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderAscIdAsc(user.getId(), date))
+        assertThat(scheduleRepository.findByUserIdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderAscIdAsc(user.getId(), date))
                 .extracting(Schedule::getTitle)
                 .containsExactly("운동하기", "독서하기");
     }
@@ -100,13 +100,13 @@ class ScheduleControllerIntegrationTest {
         User user = userRepository.saveAndFlush(User.create());
         User anotherUser = userRepository.saveAndFlush(User.create());
         LocalDate date = LocalDate.of(2026, 8, 10);
-        Schedule first = scheduleRepository.saveAndFlush(Schedule.createManual(user, date, "첫 번째", 0L));
-        Schedule sameOrder = scheduleRepository.saveAndFlush(Schedule.createManual(user, date, "같은 순서", 0L));
-        Schedule later = scheduleRepository.saveAndFlush(Schedule.createManual(user, date, "나중 순서", 1L));
-        Schedule deleted = scheduleRepository.saveAndFlush(Schedule.createManual(user, date, "삭제됨", 2L));
+        Schedule first = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), date, "첫 번째", 0L));
+        Schedule sameOrder = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), date, "같은 순서", 0L));
+        Schedule later = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), date, "나중 순서", 1L));
+        Schedule deleted = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), date, "삭제됨", 2L));
         deleted.delete(java.time.Instant.now());
         scheduleRepository.saveAndFlush(deleted);
-        scheduleRepository.saveAndFlush(Schedule.createManual(anotherUser, date, "다른 사용자", 0L));
+        scheduleRepository.saveAndFlush(Schedule.createManual(anotherUser.getId(), date, "다른 사용자", 0L));
 
         mockMvc.perform(getSchedules(user, date))
                 .andExpect(status().isOk())
@@ -120,9 +120,9 @@ class ScheduleControllerIntegrationTest {
     void updatesOnlyOwnedActiveSchedule() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
         User anotherUser = userRepository.saveAndFlush(User.create());
-        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "운동하기", 0L));
-        Schedule deleted = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "삭제된 일정", 1L));
-        Schedule external = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "외부 일정", 2L));
+        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "운동하기", 0L));
+        Schedule deleted = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "삭제된 일정", 1L));
+        Schedule external = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "외부 일정", 2L));
         deleted.delete(java.time.Instant.now());
         scheduleRepository.saveAndFlush(deleted);
         jdbcTemplate.update("UPDATE schedules SET external_id = ? WHERE id = ?", "external-1", external.getId());
@@ -151,7 +151,7 @@ class ScheduleControllerIntegrationTest {
     void softDeletesOnlyOwnedScheduleAndMakesRepeatDeleteIdempotent() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
         User anotherUser = userRepository.saveAndFlush(User.create());
-        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "운동하기", 0L));
+        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "운동하기", 0L));
 
         mockMvc.perform(deleteSchedule(anotherUser, schedule.getId()))
                 .andExpect(status().isNotFound())
@@ -192,7 +192,7 @@ class ScheduleControllerIntegrationTest {
     void completesScheduleWithEmotionAndReturnsItInDailyScheduleList() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
         LocalDate date = LocalDate.of(2026, 8, 10);
-        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user, date, "운동하기", 0L));
+        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), date, "운동하기", 0L));
 
         mockMvc.perform(changeCompletion(user, schedule.getId(), "{\"completed\":true,\"emotion\":\"PROUD\"}"))
                 .andExpect(status().isOk())
@@ -212,7 +212,7 @@ class ScheduleControllerIntegrationTest {
     @Test
     void completesScheduleWithoutEmotionAndChangesEmotionAfterCompletion() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
-        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "운동하기", 0L));
+        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "운동하기", 0L));
 
         mockMvc.perform(changeCompletion(user, schedule.getId(), "{\"completed\":true,\"emotion\":null}"))
                 .andExpect(status().isOk())
@@ -229,7 +229,7 @@ class ScheduleControllerIntegrationTest {
     @Test
     void cancellingCompletionClearsEmotion() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
-        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "운동하기", 0L));
+        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "운동하기", 0L));
         mockMvc.perform(changeCompletion(user, schedule.getId(), "{\"completed\":true,\"emotion\":\"PROUD\"}"))
                 .andExpect(status().isOk());
 
@@ -245,7 +245,7 @@ class ScheduleControllerIntegrationTest {
     @Test
     void rejectsEmotionForIncompleteScheduleAndUnsupportedEmotionCode() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
-        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "운동하기", 0L));
+        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "운동하기", 0L));
 
         mockMvc.perform(changeCompletion(user, schedule.getId(), "{\"completed\":false,\"emotion\":\"PROUD\"}"))
                 .andExpect(status().isBadRequest())
@@ -264,8 +264,8 @@ class ScheduleControllerIntegrationTest {
     void blocksCompletionChangeForAnotherUsersOrDeletedSchedule() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
         User anotherUser = userRepository.saveAndFlush(User.create());
-        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "운동하기", 0L));
-        Schedule deleted = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "삭제됨", 1L));
+        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "운동하기", 0L));
+        Schedule deleted = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "삭제됨", 1L));
         deleted.delete(java.time.Instant.now());
         scheduleRepository.saveAndFlush(deleted);
 
@@ -280,7 +280,7 @@ class ScheduleControllerIntegrationTest {
     @Test
     void completesExternalScheduleWithEmotion() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
-        Schedule external = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "외부 일정", 0L));
+        Schedule external = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "외부 일정", 0L));
         jdbcTemplate.update("UPDATE schedules SET external_id = ? WHERE id = ?", "external-1", external.getId());
 
         mockMvc.perform(changeCompletion(user, external.getId(), "{\"completed\":true,\"emotion\":\"CALM\"}"))
@@ -294,9 +294,9 @@ class ScheduleControllerIntegrationTest {
     void changesScheduleOrderAndDailyLookupUsesChangedOrder() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
         LocalDate date = LocalDate.of(2026, 8, 10);
-        Schedule first = scheduleRepository.saveAndFlush(Schedule.createManual(user, date, "첫 번째", 0L));
-        Schedule second = scheduleRepository.saveAndFlush(Schedule.createManual(user, date, "두 번째", 1L));
-        Schedule third = scheduleRepository.saveAndFlush(Schedule.createManual(user, date, "세 번째", 2L));
+        Schedule first = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), date, "첫 번째", 0L));
+        Schedule second = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), date, "두 번째", 1L));
+        Schedule third = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), date, "세 번째", 2L));
 
         mockMvc.perform(changeOrder(user, "{\"date\":\"2026-08-10\",\"scheduleIds\":[%d,%d,%d]}".formatted(third.getId(), first.getId(), second.getId())))
                 .andExpect(status().isNoContent());
@@ -314,8 +314,8 @@ class ScheduleControllerIntegrationTest {
     @Test
     void rejectsDuplicateOrMissingScheduleIdsWhenChangingOrder() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
-        Schedule first = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "첫 번째", 0L));
-        Schedule second = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "두 번째", 1L));
+        Schedule first = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "첫 번째", 0L));
+        Schedule second = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "두 번째", 1L));
 
         mockMvc.perform(changeOrder(user, "{\"date\":\"2026-08-10\",\"scheduleIds\":[%d,%d,%d]}".formatted(first.getId(), first.getId(), second.getId())))
                 .andExpect(status().isBadRequest())
@@ -328,8 +328,8 @@ class ScheduleControllerIntegrationTest {
     @Test
     void rejectsNonexistentAndDifferentDateScheduleIdsWhenChangingOrder() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
-        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "첫 번째", 0L));
-        Schedule anotherDate = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 11), "다른 날짜", 0L));
+        Schedule schedule = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "첫 번째", 0L));
+        Schedule anotherDate = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 11), "다른 날짜", 0L));
 
         mockMvc.perform(changeOrder(user, "{\"date\":\"2026-08-10\",\"scheduleIds\":[%d,999999]}".formatted(schedule.getId())))
                 .andExpect(status().isBadRequest());
@@ -341,9 +341,9 @@ class ScheduleControllerIntegrationTest {
     void rejectsAnotherUsersAndDeletedSchedulesWhenChangingOrder() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
         User anotherUser = userRepository.saveAndFlush(User.create());
-        Schedule owned = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "내 일정", 0L));
-        Schedule anotherUsers = scheduleRepository.saveAndFlush(Schedule.createManual(anotherUser, LocalDate.of(2026, 8, 10), "다른 사용자", 0L));
-        Schedule deleted = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "삭제됨", 1L));
+        Schedule owned = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "내 일정", 0L));
+        Schedule anotherUsers = scheduleRepository.saveAndFlush(Schedule.createManual(anotherUser.getId(), LocalDate.of(2026, 8, 10), "다른 사용자", 0L));
+        Schedule deleted = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "삭제됨", 1L));
         deleted.delete(java.time.Instant.now());
         scheduleRepository.saveAndFlush(deleted);
 
@@ -357,14 +357,44 @@ class ScheduleControllerIntegrationTest {
     @Test
     void keepsAllDisplayOrdersWhenOrderValidationFails() throws Exception {
         User user = userRepository.saveAndFlush(User.create());
-        Schedule first = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "첫 번째", 0L));
-        Schedule second = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "두 번째", 1L));
+        Schedule first = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "첫 번째", 0L));
+        Schedule second = scheduleRepository.saveAndFlush(Schedule.createManual(user.getId(), LocalDate.of(2026, 8, 10), "두 번째", 1L));
 
         mockMvc.perform(changeOrder(user, "{\"date\":\"2026-08-10\",\"scheduleIds\":[%d,999999]}".formatted(second.getId())))
                 .andExpect(status().isBadRequest());
 
         assertThat(scheduleRepository.findById(first.getId()).orElseThrow().getDisplayOrder()).isZero();
         assertThat(scheduleRepository.findById(second.getId()).orElseThrow().getDisplayOrder()).isEqualTo(1L);
+    }
+
+    @Test
+    void returnsAuthenticationRequiredForDeletedAuthenticatedUserAcrossScheduleUseCases() throws Exception {
+        User user = userRepository.saveAndFlush(User.create());
+        String token = bearerToken(user);
+        userRepository.deleteById(user.getId());
+        LocalDate date = LocalDate.of(2026, 8, 10);
+
+        mockMvc.perform(get("/api/v1/schedules").param("date", date.toString()).header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
+                .andExpect(jsonPath("$.message").value("인증이 필요합니다."));
+        mockMvc.perform(post("/api/v1/schedules").header(HttpHeaders.AUTHORIZATION, token).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"date\":\"2026-08-10\",\"title\":\"운동하기\"}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/api/v1/schedules/{scheduleId}", 1L).header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"date\":\"2026-08-10\",\"title\":\"운동하기\"}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/api/v1/schedules/{scheduleId}", 1L).header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(put("/api/v1/schedules/{scheduleId}/completion", 1L).header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"completed\":true,\"emotion\":\"PROUD\"}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(patch("/api/v1/schedules/order").header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"date\":\"2026-08-10\",\"scheduleIds\":[1]}"))
+                .andExpect(status().isUnauthorized());
+
+        assertThat(scheduleRepository.findByUserIdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderAscIdAsc(user.getId(), date))
+                .isEmpty();
     }
 
     @Test
