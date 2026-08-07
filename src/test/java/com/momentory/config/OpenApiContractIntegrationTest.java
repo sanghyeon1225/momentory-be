@@ -1,6 +1,8 @@
 package com.momentory.config;
 
 import com.momentory.MomentoryApplication;
+import com.momentory.schedule.domain.ScheduleEmotion;
+import com.momentory.schedule.presentation.ScheduleCompletionRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,6 +113,7 @@ class OpenApiContractIntegrationTest {
         assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "404", "ScheduleErrorResponse");
 
         assertResponseSchema(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "200", "ScheduleCompletionResponse");
+        assertScheduleCompletionRequestProperties(apiDocs);
         assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "400", "ScheduleErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "잘못된 요청입니다.");
         assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "400", "ScheduleErrorResponse", "INVALID_REQUEST_COMPLETION_EMOTION", "INVALID_REQUEST", "emotion must be null when completed is false");
         assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
@@ -121,6 +124,27 @@ class OpenApiContractIntegrationTest {
         assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "400", "ScheduleErrorResponse", "INVALID_SCHEDULE_ORDER", "INVALID_REQUEST", "Invalid schedule order request.");
         assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
         assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "404", "ScheduleErrorResponse", "SCHEDULE_NOT_FOUND", "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
+    }
+
+    @Test
+    void hidesInternalCompletionValidationPropertyFromJackson() throws Exception {
+        ScheduleCompletionRequest request = objectMapper.readValue("""
+                {
+                  "completed": true,
+                  "emotion": "PROUD",
+                  "completionEmotionValid": false
+                }
+                """, ScheduleCompletionRequest.class);
+
+        assertThat(request.completed()).isTrue();
+        assertThat(request.emotion()).isEqualTo(ScheduleEmotion.PROUD);
+        assertThat(request.isCompletionEmotionValid()).isTrue();
+
+        JsonNode serialized = objectMapper.readTree(objectMapper.writeValueAsString(request));
+        assertThat(serialized.size()).isEqualTo(2);
+        assertThat(serialized.has("completed")).isTrue();
+        assertThat(serialized.has("emotion")).isTrue();
+        assertThat(serialized.has("completionEmotionValid")).isFalse();
     }
 
     @Test
@@ -212,6 +236,15 @@ class OpenApiContractIntegrationTest {
         JsonNode properties = apiDocs.at("/components/schemas/" + schemaName + "/properties");
         assertThat(properties.has("code")).isTrue();
         assertThat(properties.has("message")).isTrue();
+    }
+
+    private void assertScheduleCompletionRequestProperties(JsonNode apiDocs) {
+        JsonNode properties = apiDocs.at("/components/schemas/ScheduleCompletionRequest/properties");
+        assertThat(properties.isObject()).isTrue();
+        assertThat(properties.size()).isEqualTo(2);
+        assertThat(properties.has("completed")).isTrue();
+        assertThat(properties.has("emotion")).isTrue();
+        assertThat(properties.has("completionEmotionValid")).isFalse();
     }
 
     private JsonNode response(JsonNode apiDocs, String path, String method, String responseCode) {
