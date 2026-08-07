@@ -15,5 +15,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
     Optional<Schedule> findByIdAndUser_Id(Long id, Long userId);
 
+    Optional<Schedule> findByIdAndUser_IdAndDeletedAtIsNull(Long id, Long userId);
+
     Optional<Schedule> findByIdAndUser_IdAndExternalIdIsNullAndDeletedAtIsNull(Long id, Long userId);
 }

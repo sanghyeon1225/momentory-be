@@ -1,6 +1,7 @@
 package com.momentory.schedule.application;
 
 import com.momentory.schedule.domain.Schedule;
+import com.momentory.schedule.domain.ScheduleEmotion;
 import com.momentory.schedule.infrastructure.ScheduleRepository;
 import com.momentory.user.application.AuthenticatedUserNotFoundException;
 import com.momentory.user.domain.User;
@@ -11,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class ScheduleService {
@@ -59,6 +62,51 @@ public class ScheduleService {
         Schedule schedule = scheduleRepository.findByIdAndUser_Id(scheduleId, userId)
                 .orElseThrow(ScheduleNotFoundException::new);
         schedule.delete(Instant.now());
+    }
+
+    @Transactional
+    public ScheduleCompletionResult changeCompletion(Long userId, Long scheduleId, boolean completed, ScheduleEmotion emotion) {
+        requireUser(userId);
+        Schedule schedule = scheduleRepository.findByIdAndUser_IdAndDeletedAtIsNull(scheduleId, userId)
+                .orElseThrow(ScheduleNotFoundException::new);
+        schedule.changeCompletion(completed, emotion);
+        return ScheduleCompletionResult.from(schedule);
+    }
+
+    @Transactional
+    public void changeScheduleOrder(Long userId, LocalDate date, List<Long> scheduleIds) {
+        requireUser(userId);
+        if (scheduleIds.stream().distinct().count() != scheduleIds.size()) {
+            throw new InvalidScheduleOrderException();
+        }
+
+        List<Schedule> requestedSchedules = scheduleRepository.findAllById(scheduleIds);
+        if (requestedSchedules.size() != scheduleIds.size()) {
+            throw new InvalidScheduleOrderException();
+        }
+        if (requestedSchedules.stream().anyMatch(schedule -> !schedule.belongsTo(userId))) {
+            throw new ScheduleNotFoundException();
+        }
+        if (requestedSchedules.stream().anyMatch(Schedule::isDeleted)
+                || requestedSchedules.stream().anyMatch(schedule -> !date.equals(schedule.getScheduleDate()))) {
+            throw new InvalidScheduleOrderException();
+        }
+
+        Set<Long> requestedScheduleIds = Set.copyOf(scheduleIds);
+        Set<Long> activeScheduleIds = scheduleRepository
+                .findByUser_IdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderAscIdAsc(userId, date)
+                .stream()
+                .map(Schedule::getId)
+                .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        if (!activeScheduleIds.equals(requestedScheduleIds)) {
+            throw new InvalidScheduleOrderException();
+        }
+
+        Map<Long, Schedule> schedulesById = requestedSchedules.stream()
+                .collect(java.util.stream.Collectors.toUnmodifiableMap(Schedule::getId, schedule -> schedule));
+        for (int index = 0; index < scheduleIds.size(); index++) {
+            schedulesById.get(scheduleIds.get(index)).changeDisplayOrder(index);
+        }
     }
 
     private User requireUser(Long userId) {

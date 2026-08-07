@@ -2,6 +2,7 @@ package com.momentory.schedule.presentation;
 
 import com.momentory.auth.presentation.AuthErrorResponse;
 import com.momentory.schedule.application.ScheduleNotFoundException;
+import com.momentory.schedule.application.InvalidScheduleOrderException;
 import com.momentory.user.application.AuthenticatedUserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,11 @@ public class ScheduleExceptionHandler {
     @ExceptionHandler(ScheduleNotFoundException.class)
     ResponseEntity<ScheduleErrorResponse> handleScheduleNotFound() {
         return scheduleError(HttpStatus.NOT_FOUND, "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
+    }
+
+    @ExceptionHandler(InvalidScheduleOrderException.class)
+    ResponseEntity<ScheduleErrorResponse> handleInvalidScheduleOrder() {
+        return scheduleError(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Invalid schedule order request.");
     }
 
     @ExceptionHandler(AuthenticatedUserNotFoundException.class)
