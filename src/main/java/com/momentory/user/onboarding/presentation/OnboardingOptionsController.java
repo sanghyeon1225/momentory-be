@@ -1,6 +1,6 @@
 package com.momentory.user.onboarding.presentation;
 
-import com.momentory.auth.presentation.AuthErrorResponse;
+import com.momentory.common.presentation.ApiErrorResponse;
 import com.momentory.user.onboarding.application.OnboardingOptionsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -42,7 +42,7 @@ public class OnboardingOptionsController {
                     description = "인증 필요",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "AUTHENTICATION_REQUIRED",
                                     value = """

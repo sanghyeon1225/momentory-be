@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public record DailyMemoRequest(
         @Schema(description = "하루 메모 내용", example = "오늘 회의가 많았지만 잘 마무리했다.")
-        @NotBlank(message = "content is required.")
+        @NotBlank(message = "메모 내용을 입력해주세요.")
         String content
 ) {
 

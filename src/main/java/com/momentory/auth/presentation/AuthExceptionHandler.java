@@ -6,31 +6,17 @@ import com.momentory.auth.kakao.presentation.KakaoLoginController;
 import com.momentory.auth.logout.presentation.LogoutController;
 import com.momentory.auth.token.application.RefreshTokenReissueException;
 import com.momentory.auth.token.presentation.RefreshTokenReissueController;
+import com.momentory.common.presentation.ApiErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice(assignableTypes = {KakaoLoginController.class, RefreshTokenReissueController.class, LogoutController.class})
 public class AuthExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    ResponseEntity<AuthErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
-        FieldError fieldError = exception.getBindingResult().getFieldError();
-        String message = fieldError == null ? "잘못된 요청입니다." : fieldError.getDefaultMessage();
-        return error(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", message);
-    }
-
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    ResponseEntity<AuthErrorResponse> handleUnreadableRequest() {
-        return error(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "잘못된 요청입니다.");
-    }
-
     @ExceptionHandler(KakaoApiException.class)
-    ResponseEntity<AuthErrorResponse> handleKakaoApiException(KakaoApiException exception) {
+    ResponseEntity<ApiErrorResponse> handleKakaoApiException(KakaoApiException exception) {
         return switch (exception.getErrorCode()) {
             case INVALID_ACCESS_TOKEN -> error(HttpStatus.UNAUTHORIZED, "KAKAO_TOKEN_INVALID", "카카오 인증에 실패했습니다.");
             case APP_ID_MISMATCH -> error(HttpStatus.UNAUTHORIZED, "KAKAO_APP_ID_MISMATCH", "카카오 인증에 실패했습니다.");
@@ -42,15 +28,15 @@ public class AuthExceptionHandler {
     }
 
     @ExceptionHandler(RefreshTokenReissueException.class)
-    ResponseEntity<AuthErrorResponse> handleRefreshToken(RefreshTokenReissueException exception) {
+    ResponseEntity<ApiErrorResponse> handleRefreshToken(RefreshTokenReissueException exception) {
         return switch (exception.getErrorCode()) {
-            case INVALID -> error(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_INVALID", "Refresh Token이 유효하지 않습니다.");
-            case REVOKED -> error(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_REVOKED", "Refresh Token이 이미 폐기되었습니다.");
-            case EXPIRED -> error(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_EXPIRED", "Refresh Token이 만료되었습니다.");
+            case INVALID -> error(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_INVALID", "리프레시 토큰이 유효하지 않습니다.");
+            case REVOKED -> error(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_REVOKED", "리프레시 토큰이 이미 폐기되었습니다.");
+            case EXPIRED -> error(HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_EXPIRED", "리프레시 토큰이 만료되었습니다.");
         };
     }
 
-    private ResponseEntity<AuthErrorResponse> error(HttpStatus status, String code, String message) {
-        return ResponseEntity.status(status).body(new AuthErrorResponse(code, message));
+    private ResponseEntity<ApiErrorResponse> error(HttpStatus status, String code, String message) {
+        return ResponseEntity.status(status).body(new ApiErrorResponse(code, message));
     }
 }

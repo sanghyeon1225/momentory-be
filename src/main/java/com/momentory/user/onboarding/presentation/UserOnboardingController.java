@@ -2,7 +2,7 @@ package com.momentory.user.onboarding.presentation;
 
 import com.momentory.auth.security.Login;
 import com.momentory.auth.security.LoginPrincipal;
-import com.momentory.auth.presentation.AuthErrorResponse;
+import com.momentory.common.presentation.ApiErrorResponse;
 import com.momentory.user.onboarding.application.CompleteOnboardingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -46,10 +46,10 @@ public class UserOnboardingController {
                     description = "잘못된 요청",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = OnboardingErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = {
                                     @ExampleObject(
-                                            name = "VALIDATION_ERROR",
+                                            name = "validationError",
                                             value = """
                                                     {
                                                       "code": "INVALID_REQUEST",
@@ -58,7 +58,7 @@ public class UserOnboardingController {
                                                     """
                                     ),
                                     @ExampleObject(
-                                            name = "UNREADABLE_REQUEST",
+                                            name = "unreadableRequest",
                                             value = """
                                                     {
                                                       "code": "INVALID_REQUEST",
@@ -74,7 +74,7 @@ public class UserOnboardingController {
                     description = "인증 필요",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "AUTHENTICATION_REQUIRED",
                                     value = """
