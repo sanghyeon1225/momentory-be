@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record ScheduleCompletionRequest(
         @Schema(example = "true")
-        @NotNull(message = "completed is required")
+        @NotNull(message = "완료 여부를 입력해주세요.")
         Boolean completed,
         @Schema(nullable = true, example = "PROUD")
         ScheduleEmotion emotion
@@ -16,7 +16,7 @@ public record ScheduleCompletionRequest(
 
     @JsonIgnore
     @Schema(hidden = true)
-    @AssertTrue(message = "emotion must be null when completed is false")
+    @AssertTrue(message = "미완료 상태에서는 감정을 선택할 수 없습니다.")
     public boolean isCompletionEmotionValid() {
         return completed == null || completed || emotion == null;
     }

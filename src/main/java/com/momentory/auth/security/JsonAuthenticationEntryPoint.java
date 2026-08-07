@@ -1,6 +1,6 @@
 package com.momentory.auth.security;
 
-import com.momentory.auth.presentation.AuthErrorResponse;
+import com.momentory.common.presentation.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
@@ -12,7 +12,7 @@ import java.io.IOException;
 
 public final class JsonAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    private static final AuthErrorResponse RESPONSE = new AuthErrorResponse(
+    private static final ApiErrorResponse RESPONSE = new ApiErrorResponse(
             "AUTHENTICATION_REQUIRED",
             "인증이 필요합니다."
     );

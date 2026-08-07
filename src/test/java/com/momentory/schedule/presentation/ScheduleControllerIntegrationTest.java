@@ -133,7 +133,8 @@ class ScheduleControllerIntegrationTest {
                 .andExpect(jsonPath("$.title").value("저녁 운동하기"));
         mockMvc.perform(update(anotherUser, schedule.getId(), "{\"date\":\"2026-08-11\",\"title\":\"변경\"}"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("SCHEDULE_NOT_FOUND"));
+                .andExpect(jsonPath("$.code").value("SCHEDULE_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("일정을 찾을 수 없습니다."));
         mockMvc.perform(update(user, deleted.getId(), "{\"date\":\"2026-08-11\",\"title\":\"변경\"}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("SCHEDULE_NOT_FOUND"));
@@ -180,7 +181,8 @@ class ScheduleControllerIntegrationTest {
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
         mockMvc.perform(get("/api/v1/schedules?date=2026-08-40").header(HttpHeaders.AUTHORIZATION, bearerToken(user)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("잘못된 요청입니다."));
         mockMvc.perform(delete("/api/v1/schedules/not-a-number").header(HttpHeaders.AUTHORIZATION, bearerToken(user)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
@@ -247,7 +249,8 @@ class ScheduleControllerIntegrationTest {
 
         mockMvc.perform(changeCompletion(user, schedule.getId(), "{\"completed\":false,\"emotion\":\"PROUD\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("미완료 상태에서는 감정을 선택할 수 없습니다."));
         mockMvc.perform(changeCompletion(user, schedule.getId(), "{\"completed\":true,\"emotion\":\"UNKNOWN\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
@@ -315,7 +318,9 @@ class ScheduleControllerIntegrationTest {
         Schedule second = scheduleRepository.saveAndFlush(Schedule.createManual(user, LocalDate.of(2026, 8, 10), "두 번째", 1L));
 
         mockMvc.perform(changeOrder(user, "{\"date\":\"2026-08-10\",\"scheduleIds\":[%d,%d,%d]}".formatted(first.getId(), first.getId(), second.getId())))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("일정 순서 변경 요청이 올바르지 않습니다."));
         mockMvc.perform(changeOrder(user, "{\"date\":\"2026-08-10\",\"scheduleIds\":[%d]}".formatted(first.getId())))
                 .andExpect(status().isBadRequest());
     }
@@ -370,7 +375,7 @@ class ScheduleControllerIntegrationTest {
                         .value("#/components/schemas/ScheduleCompletionResponse"))
                 .andExpect(jsonPath("$.paths['/api/v1/schedules/order'].patch.responses.204").exists())
                 .andExpect(jsonPath("$.paths['/api/v1/schedules/order'].patch.responses.400.content['application/json'].schema['$ref']")
-                        .value("#/components/schemas/ScheduleErrorResponse"));
+                        .value("#/components/schemas/ApiErrorResponse"));
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder create(User user, String body) {

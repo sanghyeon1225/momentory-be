@@ -68,18 +68,26 @@ class OpenApiContractIntegrationTest {
         JsonNode apiDocs = getApiDocs();
 
         assertResponseSchema(apiDocs, "/api/v1/auth/kakao", "post", "200", "KakaoLoginResponse");
-        assertErrorResponse(apiDocs, "/api/v1/auth/kakao", "post", "400", "AuthErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/auth/kakao", "post", "401", "AuthErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/auth/kakao", "post", "502", "AuthErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/auth/kakao", "post", "503", "AuthErrorResponse");
+        assertErrorExample(apiDocs, "/api/v1/auth/kakao", "post", "400", "ApiErrorResponse", "validationError", "INVALID_REQUEST", "accessToken은 필수입니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/kakao", "post", "400", "ApiErrorResponse", "unreadableRequest", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/kakao", "post", "401", "ApiErrorResponse", "KAKAO_TOKEN_INVALID", "KAKAO_TOKEN_INVALID", "카카오 인증에 실패했습니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/kakao", "post", "401", "ApiErrorResponse", "KAKAO_APP_ID_MISMATCH", "KAKAO_APP_ID_MISMATCH", "카카오 인증에 실패했습니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/kakao", "post", "401", "ApiErrorResponse", "KAKAO_USER_ID_MISMATCH", "KAKAO_USER_ID_MISMATCH", "카카오 인증에 실패했습니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/kakao", "post", "502", "ApiErrorResponse", "KAKAO_API_SERVER_ERROR", "KAKAO_API_SERVER_ERROR", "카카오 서비스에 일시적인 오류가 발생했습니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/kakao", "post", "502", "ApiErrorResponse", "KAKAO_API_RESPONSE_ERROR", "KAKAO_API_RESPONSE_ERROR", "카카오 서비스 응답을 처리할 수 없습니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/kakao", "post", "503", "ApiErrorResponse", "KAKAO_API_NETWORK_ERROR", "KAKAO_API_NETWORK_ERROR", "카카오 서비스에 연결할 수 없습니다.");
 
         assertResponseSchema(apiDocs, "/api/v1/auth/reissue", "post", "200", "RefreshTokenReissueResponse");
-        assertErrorResponse(apiDocs, "/api/v1/auth/reissue", "post", "400", "AuthErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/auth/reissue", "post", "401", "AuthErrorResponse");
+        assertErrorExample(apiDocs, "/api/v1/auth/reissue", "post", "400", "ApiErrorResponse", "validationError", "INVALID_REQUEST", "refreshToken은 필수입니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/reissue", "post", "400", "ApiErrorResponse", "unreadableRequest", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/reissue", "post", "401", "ApiErrorResponse", "REFRESH_TOKEN_INVALID", "REFRESH_TOKEN_INVALID", "리프레시 토큰이 유효하지 않습니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/reissue", "post", "401", "ApiErrorResponse", "REFRESH_TOKEN_REVOKED", "REFRESH_TOKEN_REVOKED", "리프레시 토큰이 이미 폐기되었습니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/reissue", "post", "401", "ApiErrorResponse", "REFRESH_TOKEN_EXPIRED", "REFRESH_TOKEN_EXPIRED", "리프레시 토큰이 만료되었습니다.");
         assertOperationTag(apiDocs, "/api/v1/auth/reissue", "post", "Authentication");
 
         assertNoResponseContent(apiDocs, "/api/v1/auth/logout", "post", "204");
-        assertErrorResponse(apiDocs, "/api/v1/auth/logout", "post", "400", "AuthErrorResponse");
+        assertErrorExample(apiDocs, "/api/v1/auth/logout", "post", "400", "ApiErrorResponse", "validationError", "INVALID_REQUEST", "refreshToken은 필수입니다.");
+        assertErrorExample(apiDocs, "/api/v1/auth/logout", "post", "400", "ApiErrorResponse", "unreadableRequest", "INVALID_REQUEST", "잘못된 요청입니다.");
         assertOperationTag(apiDocs, "/api/v1/auth/logout", "post", "Authentication");
     }
 
@@ -88,57 +96,58 @@ class OpenApiContractIntegrationTest {
         JsonNode apiDocs = getApiDocs();
 
         assertResponseSchema(apiDocs, "/api/v1/users/me", "get", "200", "UserMeResponse");
-        assertErrorResponse(apiDocs, "/api/v1/users/me", "get", "401", "AuthErrorResponse");
+        assertErrorExample(apiDocs, "/api/v1/users/me", "get", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
 
         assertResponseSchema(apiDocs, "/api/v1/users/me/onboarding", "put", "200", "CompleteOnboardingResponse");
-        assertErrorResponse(apiDocs, "/api/v1/users/me/onboarding", "put", "400", "OnboardingErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/users/me/onboarding", "put", "401", "AuthErrorResponse");
+        assertErrorExample(apiDocs, "/api/v1/users/me/onboarding", "put", "400", "ApiErrorResponse", "validationError", "INVALID_REQUEST", "nickname은 필수입니다.");
+        assertErrorExample(apiDocs, "/api/v1/users/me/onboarding", "put", "400", "ApiErrorResponse", "unreadableRequest", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/users/me/onboarding", "put", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
 
         assertResponseSchema(apiDocs, "/api/v1/onboarding/options", "get", "200", "OnboardingOptionsResponse");
-        assertErrorResponse(apiDocs, "/api/v1/onboarding/options", "get", "401", "AuthErrorResponse");
+        assertErrorExample(apiDocs, "/api/v1/onboarding/options", "get", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
 
         assertResponseSchema(apiDocs, "/api/v1/schedules", "get", "200", "ScheduleListResponse");
-        assertErrorResponse(apiDocs, "/api/v1/schedules", "get", "400", "ScheduleErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/schedules", "get", "401", "AuthErrorResponse");
+        assertErrorExample(apiDocs, "/api/v1/schedules", "get", "400", "ApiErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules", "get", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
         assertResponseSchema(apiDocs, "/api/v1/schedules", "post", "201", "ScheduleResponse");
-        assertErrorResponse(apiDocs, "/api/v1/schedules", "post", "400", "ScheduleErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/schedules", "post", "401", "AuthErrorResponse");
+        assertErrorExample(apiDocs, "/api/v1/schedules", "post", "400", "ApiErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "title은 필수입니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules", "post", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
         assertResponseSchema(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "200", "ScheduleResponse");
-        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "400", "ScheduleErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "401", "AuthErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "404", "ScheduleErrorResponse");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "400", "ApiErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "title은 필수입니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}", "patch", "404", "ApiErrorResponse", "SCHEDULE_NOT_FOUND", "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
         assertNoResponseContent(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "204");
-        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "400", "ScheduleErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "401", "AuthErrorResponse");
-        assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "404", "ScheduleErrorResponse");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "400", "ApiErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "404", "ApiErrorResponse", "SCHEDULE_NOT_FOUND", "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
 
         assertResponseSchema(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "200", "ScheduleCompletionResponse");
         assertScheduleCompletionRequestProperties(apiDocs);
-        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "400", "ScheduleErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "잘못된 요청입니다.");
-        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "400", "ScheduleErrorResponse", "INVALID_REQUEST_COMPLETION_EMOTION", "INVALID_REQUEST", "emotion must be null when completed is false");
-        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
-        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "404", "ScheduleErrorResponse", "SCHEDULE_NOT_FOUND", "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "400", "ApiErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "400", "ApiErrorResponse", "incompleteScheduleWithEmotion", "INVALID_REQUEST", "미완료 상태에서는 감정을 선택할 수 없습니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "404", "ApiErrorResponse", "SCHEDULE_NOT_FOUND", "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
 
         assertNoResponseContent(apiDocs, "/api/v1/schedules/order", "patch", "204");
-        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "400", "ScheduleErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "잘못된 요청입니다.");
-        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "400", "ScheduleErrorResponse", "INVALID_SCHEDULE_ORDER", "INVALID_REQUEST", "Invalid schedule order request.");
-        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
-        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "404", "ScheduleErrorResponse", "SCHEDULE_NOT_FOUND", "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "400", "ApiErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "400", "ApiErrorResponse", "invalidScheduleOrder", "INVALID_REQUEST", "일정 순서 변경 요청이 올바르지 않습니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "404", "ApiErrorResponse", "SCHEDULE_NOT_FOUND", "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
 
         assertResponseSchema(apiDocs, "/api/v1/memos/{date}", "get", "200", "DailyMemoResponse");
-        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "get", "400", "DailyMemoErrorResponse", "invalidDateFormat", "INVALID_REQUEST", "Invalid request.");
-        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "get", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
-        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "get", "404", "DailyMemoErrorResponse", "DAILY_MEMO_NOT_FOUND", "DAILY_MEMO_NOT_FOUND", "Daily memo not found.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "get", "400", "ApiErrorResponse", "invalidDateFormat", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "get", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "get", "404", "ApiErrorResponse", "DAILY_MEMO_NOT_FOUND", "DAILY_MEMO_NOT_FOUND", "하루 메모를 찾을 수 없습니다.");
 
         assertResponseSchema(apiDocs, "/api/v1/memos/{date}", "put", "200", "DailyMemoResponse");
-        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "400", "DailyMemoErrorResponse", "invalidDateFormat", "INVALID_REQUEST", "Invalid request.");
-        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "400", "DailyMemoErrorResponse", "malformedRequestBody", "INVALID_REQUEST", "Invalid request.");
-        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "400", "DailyMemoErrorResponse", "contentRequiredOrBlank", "INVALID_REQUEST", "content is required.");
-        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "400", "ApiErrorResponse", "invalidDateFormat", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "400", "ApiErrorResponse", "malformedRequestBody", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "400", "ApiErrorResponse", "contentRequiredOrBlank", "INVALID_REQUEST", "메모 내용을 입력해주세요.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
 
         assertNoResponseContent(apiDocs, "/api/v1/memos/{date}", "delete", "204");
-        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "delete", "400", "DailyMemoErrorResponse", "invalidDateFormat", "INVALID_REQUEST", "Invalid request.");
-        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "delete", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "delete", "400", "ApiErrorResponse", "invalidDateFormat", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "delete", "401", "ApiErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
     }
 
     @Test
@@ -176,10 +185,7 @@ class OpenApiContractIntegrationTest {
             }
         }
 
-        assertErrorSchemaProperties(apiDocs, "AuthErrorResponse");
-        assertErrorSchemaProperties(apiDocs, "OnboardingErrorResponse");
-        assertErrorSchemaProperties(apiDocs, "ScheduleErrorResponse");
-        assertErrorSchemaProperties(apiDocs, "DailyMemoErrorResponse");
+        assertErrorSchemaProperties(apiDocs, "ApiErrorResponse");
     }
 
     private JsonNode getApiDocs() throws Exception {

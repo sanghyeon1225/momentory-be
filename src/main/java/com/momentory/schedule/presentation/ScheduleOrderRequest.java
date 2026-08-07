@@ -9,10 +9,10 @@ import java.util.List;
 
 public record ScheduleOrderRequest(
         @Schema(example = "2026-08-10")
-        @NotNull(message = "date is required")
+        @NotNull(message = "날짜는 필수입니다.")
         LocalDate date,
         @Schema(example = "[4, 2, 8, 1]")
-        @NotEmpty(message = "scheduleIds must not be empty")
-        List<@NotNull(message = "scheduleId must not be null") Long> scheduleIds
+        @NotEmpty(message = "일정 목록은 비어 있을 수 없습니다.")
+        List<@NotNull(message = "일정 ID는 필수입니다.") Long> scheduleIds
 ) {
 }

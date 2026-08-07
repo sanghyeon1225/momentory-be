@@ -1,6 +1,6 @@
 package com.momentory.memo.presentation;
 
-import com.momentory.auth.presentation.AuthErrorResponse;
+import com.momentory.common.presentation.ApiErrorResponse;
 import com.momentory.auth.security.Login;
 import com.momentory.auth.security.LoginPrincipal;
 import com.momentory.memo.application.DailyMemoService;
@@ -43,16 +43,16 @@ public class DailyMemoController {
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "하루 메모 조회 성공", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DailyMemoResponse.class))),
-            @ApiResponse(responseCode = "400", description = "잘못된 날짜 형식", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DailyMemoErrorResponse.class), examples = @ExampleObject(
+            @ApiResponse(responseCode = "400", description = "잘못된 날짜 형식", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ApiErrorResponse.class), examples = @ExampleObject(
                     name = "invalidDateFormat",
                     value = """
                             {
                               "code": "INVALID_REQUEST",
-                              "message": "Invalid request."
+                              "message": "잘못된 요청입니다."
                             }
                             """
             ))),
-            @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthErrorResponse.class), examples = @ExampleObject(
+            @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ApiErrorResponse.class), examples = @ExampleObject(
                     name = "AUTHENTICATION_REQUIRED",
                     value = """
                             {
@@ -61,12 +61,12 @@ public class DailyMemoController {
                             }
                             """
             ))),
-            @ApiResponse(responseCode = "404", description = "하루 메모를 찾을 수 없음", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DailyMemoErrorResponse.class), examples = @ExampleObject(
+            @ApiResponse(responseCode = "404", description = "하루 메모를 찾을 수 없음", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ApiErrorResponse.class), examples = @ExampleObject(
                     name = "DAILY_MEMO_NOT_FOUND",
                     value = """
                             {
                               "code": "DAILY_MEMO_NOT_FOUND",
-                              "message": "Daily memo not found."
+                              "message": "하루 메모를 찾을 수 없습니다."
                             }
                             """
             )))
@@ -83,13 +83,13 @@ public class DailyMemoController {
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "하루 메모 저장 또는 수정 성공", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DailyMemoResponse.class))),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DailyMemoErrorResponse.class), examples = {
+            @ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ApiErrorResponse.class), examples = {
                     @ExampleObject(
                             name = "invalidDateFormat",
                             value = """
                                     {
                                       "code": "INVALID_REQUEST",
-                                      "message": "Invalid request."
+                                      "message": "잘못된 요청입니다."
                                     }
                                     """
                     ),
@@ -98,7 +98,7 @@ public class DailyMemoController {
                             value = """
                                     {
                                       "code": "INVALID_REQUEST",
-                                      "message": "Invalid request."
+                                      "message": "잘못된 요청입니다."
                                     }
                                     """
                     ),
@@ -107,12 +107,12 @@ public class DailyMemoController {
                             value = """
                                     {
                                       "code": "INVALID_REQUEST",
-                                      "message": "content is required."
+                                      "message": "메모 내용을 입력해주세요."
                                     }
                                     """
                     )
             })),
-            @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthErrorResponse.class), examples = @ExampleObject(
+            @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ApiErrorResponse.class), examples = @ExampleObject(
                     name = "AUTHENTICATION_REQUIRED",
                     value = """
                             {
@@ -135,16 +135,16 @@ public class DailyMemoController {
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "하루 메모 삭제 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 날짜 형식", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = DailyMemoErrorResponse.class), examples = @ExampleObject(
+            @ApiResponse(responseCode = "400", description = "잘못된 날짜 형식", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ApiErrorResponse.class), examples = @ExampleObject(
                     name = "invalidDateFormat",
                     value = """
                             {
                               "code": "INVALID_REQUEST",
-                              "message": "Invalid request."
+                              "message": "잘못된 요청입니다."
                             }
                             """
             ))),
-            @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthErrorResponse.class), examples = @ExampleObject(
+            @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ApiErrorResponse.class), examples = @ExampleObject(
                     name = "AUTHENTICATION_REQUIRED",
                     value = """
                             {

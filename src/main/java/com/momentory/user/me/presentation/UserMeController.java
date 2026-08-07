@@ -2,7 +2,7 @@ package com.momentory.user.me.presentation;
 
 import com.momentory.auth.security.Login;
 import com.momentory.auth.security.LoginPrincipal;
-import com.momentory.auth.presentation.AuthErrorResponse;
+import com.momentory.common.presentation.ApiErrorResponse;
 import com.momentory.user.me.application.UserMeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -44,7 +44,7 @@ public class UserMeController {
                     description = "인증이 없거나 유효하지 않음",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "AUTHENTICATION_REQUIRED",
                                     value = """

@@ -1,7 +1,7 @@
 package com.momentory.auth.logout.presentation;
 
 import com.momentory.auth.logout.application.LogoutService;
-import com.momentory.auth.presentation.AuthErrorResponse;
+import com.momentory.common.presentation.ApiErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -32,10 +32,10 @@ public class LogoutController {
                     description = "잘못된 요청",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = {
                                     @ExampleObject(
-                                            name = "VALIDATION_ERROR",
+                                            name = "validationError",
                                             value = """
                                                     {
                                                       "code": "INVALID_REQUEST",
@@ -44,7 +44,7 @@ public class LogoutController {
                                                     """
                                     ),
                                     @ExampleObject(
-                                            name = "UNREADABLE_REQUEST",
+                                            name = "unreadableRequest",
                                             value = """
                                                     {
                                                       "code": "INVALID_REQUEST",

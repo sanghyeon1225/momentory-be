@@ -113,7 +113,8 @@ class UserMeControllerIntegrationTest {
     void rejectsMissingExpiredAndTamperedAccessTokens() throws Exception {
         mockMvc.perform(get("/api/v1/users/me"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"));
+                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
+                .andExpect(jsonPath("$.message").value("인증이 필요합니다."));
 
         String expired = issueToken(1L, UserRole.USER, Instant.now().minusSeconds(120));
         mockMvc.perform(me(expired))
@@ -136,7 +137,8 @@ class UserMeControllerIntegrationTest {
 
         mockMvc.perform(me(token))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"));
+                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
+                .andExpect(jsonPath("$.message").value("인증이 필요합니다."));
     }
 
     @Test

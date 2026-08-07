@@ -1,7 +1,7 @@
 package com.momentory.auth.token.presentation;
 
 import com.momentory.auth.token.application.RefreshTokenReissueService;
-import com.momentory.auth.presentation.AuthErrorResponse;
+import com.momentory.common.presentation.ApiErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -38,10 +38,10 @@ public class RefreshTokenReissueController {
                     description = "잘못된 요청",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = {
                                     @ExampleObject(
-                                            name = "VALIDATION_ERROR",
+                                            name = "validationError",
                                             value = """
                                                     {
                                                       "code": "INVALID_REQUEST",
@@ -50,7 +50,7 @@ public class RefreshTokenReissueController {
                                                     """
                                     ),
                                     @ExampleObject(
-                                            name = "UNREADABLE_REQUEST",
+                                            name = "unreadableRequest",
                                             value = """
                                                     {
                                                       "code": "INVALID_REQUEST",
@@ -66,14 +66,14 @@ public class RefreshTokenReissueController {
                     description = "유효하지 않거나 폐기·만료된 Refresh Token",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = {
                                     @ExampleObject(
                                             name = "REFRESH_TOKEN_INVALID",
                                             value = """
                                                     {
                                                       "code": "REFRESH_TOKEN_INVALID",
-                                                      "message": "Refresh Token이 유효하지 않습니다."
+                                                      "message": "리프레시 토큰이 유효하지 않습니다."
                                                     }
                                                     """
                                     ),
@@ -82,7 +82,7 @@ public class RefreshTokenReissueController {
                                             value = """
                                                     {
                                                       "code": "REFRESH_TOKEN_REVOKED",
-                                                      "message": "Refresh Token이 이미 폐기되었습니다."
+                                                      "message": "리프레시 토큰이 이미 폐기되었습니다."
                                                     }
                                                     """
                                     ),
@@ -91,7 +91,7 @@ public class RefreshTokenReissueController {
                                             value = """
                                                     {
                                                       "code": "REFRESH_TOKEN_EXPIRED",
-                                                      "message": "Refresh Token이 만료되었습니다."
+                                                      "message": "리프레시 토큰이 만료되었습니다."
                                                     }
                                                     """
                                     )

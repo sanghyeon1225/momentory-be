@@ -92,14 +92,24 @@ class RefreshTokenReissueIntegrationTest {
     void mapsInvalidExpiredRevokedAndBlankRequestsWithoutLeakingSecrets() throws Exception {
         mockMvc.perform(post("/api/v1/auth/reissue").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
-        MvcResult invalid = mockMvc.perform(reissue("not-a-real-token")).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("REFRESH_TOKEN_INVALID")).andReturn();
+        MvcResult invalid = mockMvc.perform(reissue("not-a-real-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("REFRESH_TOKEN_INVALID"))
+                .andExpect(jsonPath("$.message").value("리프레시 토큰이 유효하지 않습니다."))
+                .andReturn();
         assertThat(invalid.getResponse().getContentAsString()).doesNotContain("not-a-real-token");
         User user = users.saveAndFlush(User.create());
         String expired = saveToken(user, Instant.now().minusSeconds(1));
-        mockMvc.perform(reissue(expired)).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("REFRESH_TOKEN_EXPIRED"));
+        mockMvc.perform(reissue(expired))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("REFRESH_TOKEN_EXPIRED"))
+                .andExpect(jsonPath("$.message").value("리프레시 토큰이 만료되었습니다."));
         String revoked = saveToken(user, Instant.now().plusSeconds(60));
         RefreshToken token = refreshTokens.findAll().stream().filter(value -> value.getTokenHash().equals(issuer.hash(revoked))).findFirst().orElseThrow(); token.revoke(); refreshTokens.saveAndFlush(token);
-        mockMvc.perform(reissue(revoked)).andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("REFRESH_TOKEN_REVOKED"));
+        mockMvc.perform(reissue(revoked))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("REFRESH_TOKEN_REVOKED"))
+                .andExpect(jsonPath("$.message").value("리프레시 토큰이 이미 폐기되었습니다."));
         assertThat(refreshTokens.count()).isEqualTo(2);
     }
 

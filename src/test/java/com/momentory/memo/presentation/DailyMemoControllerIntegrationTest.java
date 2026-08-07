@@ -88,7 +88,8 @@ class DailyMemoControllerIntegrationTest {
                 .andExpect(jsonPath("$.content").value("내 메모"));
         mockMvc.perform(getDailyMemo(anotherUser, date))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("DAILY_MEMO_NOT_FOUND"));
+                .andExpect(jsonPath("$.code").value("DAILY_MEMO_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("하루 메모를 찾을 수 없습니다."));
         mockMvc.perform(getDailyMemo(user, date.plusDays(1)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("DAILY_MEMO_NOT_FOUND"));
@@ -123,11 +124,11 @@ class DailyMemoControllerIntegrationTest {
         mockMvc.perform(putDailyMemo(user, date, ""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
-                .andExpect(jsonPath("$.message").value("content is required."));
+                .andExpect(jsonPath("$.message").value("메모 내용을 입력해주세요."));
         mockMvc.perform(putDailyMemo(user, date, "   "))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
-                .andExpect(jsonPath("$.message").value("content is required."));
+                .andExpect(jsonPath("$.message").value("메모 내용을 입력해주세요."));
 
         assertThat(dailyMemoRepository.countByUser_IdAndMemoDate(user.getId(), date)).isZero();
     }
@@ -189,7 +190,8 @@ class DailyMemoControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"content\":\"메모\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message").value("잘못된 요청입니다."));
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder getDailyMemo(User user, LocalDate date) {

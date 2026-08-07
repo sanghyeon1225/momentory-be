@@ -1,6 +1,6 @@
 package com.momentory.auth.security;
 
-import com.momentory.auth.presentation.AuthErrorResponse;
+import com.momentory.common.presentation.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
@@ -12,7 +12,7 @@ import java.io.IOException;
 
 public final class JsonAccessDeniedHandler implements AccessDeniedHandler {
 
-    private static final AuthErrorResponse RESPONSE = new AuthErrorResponse(
+    private static final ApiErrorResponse RESPONSE = new ApiErrorResponse(
             "ACCESS_DENIED",
             "접근 권한이 없습니다."
     );

@@ -2,7 +2,7 @@ package com.momentory.auth.kakao.presentation;
 
 import com.momentory.auth.kakao.application.KakaoLoginResult;
 import com.momentory.auth.kakao.application.KakaoLoginService;
-import com.momentory.auth.presentation.AuthErrorResponse;
+import com.momentory.common.presentation.ApiErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -56,10 +56,10 @@ public class KakaoLoginController {
                     description = "잘못된 요청",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = {
                                     @ExampleObject(
-                                            name = "VALIDATION_ERROR",
+                                            name = "validationError",
                                             value = """
                                                     {
                                                       "code": "INVALID_REQUEST",
@@ -68,7 +68,7 @@ public class KakaoLoginController {
                                                     """
                                     ),
                                     @ExampleObject(
-                                            name = "UNREADABLE_REQUEST",
+                                            name = "unreadableRequest",
                                             value = """
                                                     {
                                                       "code": "INVALID_REQUEST",
@@ -84,7 +84,7 @@ public class KakaoLoginController {
                     description = "카카오 토큰 검증 실패",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = {
                                     @ExampleObject(
                                             name = "KAKAO_TOKEN_INVALID",
@@ -121,7 +121,7 @@ public class KakaoLoginController {
                     description = "카카오 API 서버 또는 응답 오류",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = {
                                     @ExampleObject(
                                             name = "KAKAO_API_SERVER_ERROR",
@@ -149,7 +149,7 @@ public class KakaoLoginController {
                     description = "카카오 API 네트워크 오류",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = AuthErrorResponse.class),
+                            schema = @Schema(implementation = ApiErrorResponse.class),
                             examples = @ExampleObject(
                                     name = "KAKAO_API_NETWORK_ERROR",
                                     value = """
