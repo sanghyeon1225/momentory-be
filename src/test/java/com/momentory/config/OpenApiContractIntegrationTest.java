@@ -124,6 +124,21 @@ class OpenApiContractIntegrationTest {
         assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "400", "ScheduleErrorResponse", "INVALID_SCHEDULE_ORDER", "INVALID_REQUEST", "Invalid schedule order request.");
         assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
         assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "404", "ScheduleErrorResponse", "SCHEDULE_NOT_FOUND", "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
+
+        assertResponseSchema(apiDocs, "/api/v1/memos/{date}", "get", "200", "DailyMemoResponse");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "get", "400", "DailyMemoErrorResponse", "invalidDateFormat", "INVALID_REQUEST", "Invalid request.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "get", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "get", "404", "DailyMemoErrorResponse", "DAILY_MEMO_NOT_FOUND", "DAILY_MEMO_NOT_FOUND", "Daily memo not found.");
+
+        assertResponseSchema(apiDocs, "/api/v1/memos/{date}", "put", "200", "DailyMemoResponse");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "400", "DailyMemoErrorResponse", "invalidDateFormat", "INVALID_REQUEST", "Invalid request.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "400", "DailyMemoErrorResponse", "malformedRequestBody", "INVALID_REQUEST", "Invalid request.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "400", "DailyMemoErrorResponse", "contentRequiredOrBlank", "INVALID_REQUEST", "content is required.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "put", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+
+        assertNoResponseContent(apiDocs, "/api/v1/memos/{date}", "delete", "204");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "delete", "400", "DailyMemoErrorResponse", "invalidDateFormat", "INVALID_REQUEST", "Invalid request.");
+        assertErrorExample(apiDocs, "/api/v1/memos/{date}", "delete", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
     }
 
     @Test
@@ -164,6 +179,7 @@ class OpenApiContractIntegrationTest {
         assertErrorSchemaProperties(apiDocs, "AuthErrorResponse");
         assertErrorSchemaProperties(apiDocs, "OnboardingErrorResponse");
         assertErrorSchemaProperties(apiDocs, "ScheduleErrorResponse");
+        assertErrorSchemaProperties(apiDocs, "DailyMemoErrorResponse");
     }
 
     private JsonNode getApiDocs() throws Exception {
@@ -275,7 +291,10 @@ class OpenApiContractIntegrationTest {
         SCHEDULES_PATCH("/api/v1/schedules/{scheduleId}", "patch"),
         SCHEDULES_DELETE("/api/v1/schedules/{scheduleId}", "delete"),
         SCHEDULES_COMPLETION("/api/v1/schedules/{scheduleId}/completion", "put"),
-        SCHEDULES_ORDER("/api/v1/schedules/order", "patch");
+        SCHEDULES_ORDER("/api/v1/schedules/order", "patch"),
+        DAILY_MEMO_GET("/api/v1/memos/{date}", "get"),
+        DAILY_MEMO_PUT("/api/v1/memos/{date}", "put"),
+        DAILY_MEMO_DELETE("/api/v1/memos/{date}", "delete");
 
         private final String path;
         private final String method;
@@ -297,7 +316,8 @@ class OpenApiContractIntegrationTest {
             return this == SCHEDULES_PATCH
                     || this == SCHEDULES_DELETE
                     || this == SCHEDULES_COMPLETION
-                    || this == SCHEDULES_ORDER;
+                    || this == SCHEDULES_ORDER
+                    || this == DAILY_MEMO_GET;
         }
     }
 }
