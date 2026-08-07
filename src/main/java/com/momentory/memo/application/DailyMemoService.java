@@ -2,7 +2,6 @@ package com.momentory.memo.application;
 
 import com.momentory.memo.infrastructure.DailyMemoRepository;
 import com.momentory.user.application.AuthenticatedUserNotFoundException;
-import com.momentory.user.domain.User;
 import com.momentory.user.infrastructure.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +22,7 @@ public class DailyMemoService {
     @Transactional(readOnly = true)
     public DailyMemoResult getDailyMemo(Long userId, LocalDate date) {
         requireUser(userId);
-        return dailyMemoRepository.findByUser_IdAndMemoDate(userId, date)
+        return dailyMemoRepository.findByUserIdAndMemoDate(userId, date)
                 .map(DailyMemoResult::from)
                 .orElseThrow(DailyMemoNotFoundException::new);
     }
@@ -32,7 +31,7 @@ public class DailyMemoService {
     public DailyMemoResult saveDailyMemo(Long userId, LocalDate date, String content) {
         requireUser(userId);
         dailyMemoRepository.upsert(userId, date, content);
-        return dailyMemoRepository.findByUser_IdAndMemoDate(userId, date)
+        return dailyMemoRepository.findByUserIdAndMemoDate(userId, date)
                 .map(DailyMemoResult::from)
                 .orElseThrow(IllegalStateException::new);
     }
@@ -40,11 +39,11 @@ public class DailyMemoService {
     @Transactional
     public void deleteDailyMemo(Long userId, LocalDate date) {
         requireUser(userId);
-        dailyMemoRepository.deleteByUser_IdAndMemoDate(userId, date);
+        dailyMemoRepository.deleteByUserIdAndMemoDate(userId, date);
     }
 
-    private User requireUser(Long userId) {
-        return userRepository.findById(userId)
+    private void requireUser(Long userId) {
+        userRepository.findById(userId)
                 .orElseThrow(AuthenticatedUserNotFoundException::new);
     }
 }

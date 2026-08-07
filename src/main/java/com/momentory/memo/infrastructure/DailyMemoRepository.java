@@ -11,9 +11,9 @@ import java.util.Optional;
 
 public interface DailyMemoRepository extends JpaRepository<DailyMemo, Long> {
 
-    Optional<DailyMemo> findByUser_IdAndMemoDate(Long userId, LocalDate memoDate);
+    Optional<DailyMemo> findByUserIdAndMemoDate(Long userId, LocalDate memoDate);
 
-    long countByUser_IdAndMemoDate(Long userId, LocalDate memoDate);
+    long countByUserIdAndMemoDate(Long userId, LocalDate memoDate);
 
     @Modifying
     @Query(value = """
@@ -25,5 +25,5 @@ public interface DailyMemoRepository extends JpaRepository<DailyMemo, Long> {
     void upsert(@Param("userId") Long userId, @Param("memoDate") LocalDate memoDate, @Param("content") String content);
 
     @Modifying
-    long deleteByUser_IdAndMemoDate(Long userId, LocalDate memoDate);
+    long deleteByUserIdAndMemoDate(Long userId, LocalDate memoDate);
 }

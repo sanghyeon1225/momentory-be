@@ -1,17 +1,13 @@
 package com.momentory.schedule.domain;
 
 import com.momentory.common.persistence.BaseTimeEntity;
-import com.momentory.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
@@ -28,9 +24,8 @@ public class Schedule extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Column(name = "external_id", length = 255)
     private String externalId;
@@ -57,16 +52,16 @@ public class Schedule extends BaseTimeEntity {
     protected Schedule() {
     }
 
-    private Schedule(User user, LocalDate scheduleDate, String title, long displayOrder) {
-        this.user = Objects.requireNonNull(user);
+    private Schedule(Long userId, LocalDate scheduleDate, String title, long displayOrder) {
+        this.userId = Objects.requireNonNull(userId);
         this.scheduleDate = Objects.requireNonNull(scheduleDate);
         this.title = validateTitle(title);
         this.displayOrder = displayOrder;
         this.completed = false;
     }
 
-    public static Schedule createManual(User user, LocalDate scheduleDate, String title, long displayOrder) {
-        return new Schedule(user, scheduleDate, title, displayOrder);
+    public static Schedule createManual(Long userId, LocalDate scheduleDate, String title, long displayOrder) {
+        return new Schedule(userId, scheduleDate, title, displayOrder);
     }
 
     public void update(LocalDate scheduleDate, String title) {
@@ -117,7 +112,7 @@ public class Schedule extends BaseTimeEntity {
     }
 
     public boolean belongsTo(Long userId) {
-        return user.getId().equals(userId);
+        return this.userId.equals(userId);
     }
 
     public long getDisplayOrder() {

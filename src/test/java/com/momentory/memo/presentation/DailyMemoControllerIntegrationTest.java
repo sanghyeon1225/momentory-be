@@ -80,7 +80,7 @@ class DailyMemoControllerIntegrationTest {
         User user = userRepository.saveAndFlush(User.create());
         User anotherUser = userRepository.saveAndFlush(User.create());
         LocalDate date = LocalDate.of(2026, 8, 7);
-        dailyMemoRepository.saveAndFlush(DailyMemo.create(user, date, "내 메모"));
+        dailyMemoRepository.saveAndFlush(DailyMemo.create(user.getId(), date, "내 메모"));
 
         mockMvc.perform(getDailyMemo(user, date))
                 .andExpect(status().isOk())
@@ -111,8 +111,8 @@ class DailyMemoControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("수정한 메모"));
 
-        assertThat(dailyMemoRepository.countByUser_IdAndMemoDate(user.getId(), date)).isEqualTo(1);
-        assertThat(dailyMemoRepository.findByUser_IdAndMemoDate(user.getId(), date).orElseThrow().getContent())
+        assertThat(dailyMemoRepository.countByUserIdAndMemoDate(user.getId(), date)).isEqualTo(1);
+        assertThat(dailyMemoRepository.findByUserIdAndMemoDate(user.getId(), date).orElseThrow().getContent())
                 .isEqualTo("수정한 메모");
     }
 
@@ -130,7 +130,7 @@ class DailyMemoControllerIntegrationTest {
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
                 .andExpect(jsonPath("$.message").value("메모 내용을 입력해주세요."));
 
-        assertThat(dailyMemoRepository.countByUser_IdAndMemoDate(user.getId(), date)).isZero();
+        assertThat(dailyMemoRepository.countByUserIdAndMemoDate(user.getId(), date)).isZero();
     }
 
     @Test
@@ -143,9 +143,9 @@ class DailyMemoControllerIntegrationTest {
         mockMvc.perform(putDailyMemo(user, date.plusDays(1), "둘째 날")).andExpect(status().isOk());
         mockMvc.perform(putDailyMemo(anotherUser, date, "다른 사용자 메모")).andExpect(status().isOk());
 
-        assertThat(dailyMemoRepository.countByUser_IdAndMemoDate(user.getId(), date)).isEqualTo(1);
-        assertThat(dailyMemoRepository.countByUser_IdAndMemoDate(user.getId(), date.plusDays(1))).isEqualTo(1);
-        assertThat(dailyMemoRepository.countByUser_IdAndMemoDate(anotherUser.getId(), date)).isEqualTo(1);
+        assertThat(dailyMemoRepository.countByUserIdAndMemoDate(user.getId(), date)).isEqualTo(1);
+        assertThat(dailyMemoRepository.countByUserIdAndMemoDate(user.getId(), date.plusDays(1))).isEqualTo(1);
+        assertThat(dailyMemoRepository.countByUserIdAndMemoDate(anotherUser.getId(), date)).isEqualTo(1);
     }
 
     @Test
@@ -153,14 +153,14 @@ class DailyMemoControllerIntegrationTest {
         User user = userRepository.saveAndFlush(User.create());
         User anotherUser = userRepository.saveAndFlush(User.create());
         LocalDate date = LocalDate.of(2026, 8, 7);
-        dailyMemoRepository.saveAndFlush(DailyMemo.create(user, date, "내 메모"));
-        dailyMemoRepository.saveAndFlush(DailyMemo.create(anotherUser, date, "다른 사용자 메모"));
+        dailyMemoRepository.saveAndFlush(DailyMemo.create(user.getId(), date, "내 메모"));
+        dailyMemoRepository.saveAndFlush(DailyMemo.create(anotherUser.getId(), date, "다른 사용자 메모"));
 
         mockMvc.perform(deleteDailyMemo(anotherUser, date))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
-        assertThat(dailyMemoRepository.findByUser_IdAndMemoDate(user.getId(), date)).isPresent();
-        assertThat(dailyMemoRepository.findByUser_IdAndMemoDate(anotherUser.getId(), date)).isEmpty();
+        assertThat(dailyMemoRepository.findByUserIdAndMemoDate(user.getId(), date)).isPresent();
+        assertThat(dailyMemoRepository.findByUserIdAndMemoDate(anotherUser.getId(), date)).isEmpty();
 
         mockMvc.perform(deleteDailyMemo(user, date)).andExpect(status().isNoContent()).andExpect(content().string(""));
         mockMvc.perform(deleteDailyMemo(user, date)).andExpect(status().isNoContent()).andExpect(content().string(""));
@@ -192,6 +192,26 @@ class DailyMemoControllerIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
                 .andExpect(jsonPath("$.message").value("잘못된 요청입니다."));
+    }
+
+    @Test
+    void returnsAuthenticationRequiredForDeletedAuthenticatedUserAcrossDailyMemoUseCases() throws Exception {
+        User user = userRepository.saveAndFlush(User.create());
+        String token = bearerToken(user);
+        userRepository.deleteById(user.getId());
+        LocalDate date = LocalDate.of(2026, 8, 7);
+
+        mockMvc.perform(get("/api/v1/memos/{date}", date).header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
+                .andExpect(jsonPath("$.message").value("인증이 필요합니다."));
+        mockMvc.perform(put("/api/v1/memos/{date}", date).header(HttpHeaders.AUTHORIZATION, token)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"메모\"}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(delete("/api/v1/memos/{date}", date).header(HttpHeaders.AUTHORIZATION, token))
+                .andExpect(status().isUnauthorized());
+
+        assertThat(dailyMemoRepository.countByUserIdAndMemoDate(user.getId(), date)).isZero();
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder getDailyMemo(User user, LocalDate date) {

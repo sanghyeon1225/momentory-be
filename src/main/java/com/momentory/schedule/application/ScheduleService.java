@@ -4,7 +4,6 @@ import com.momentory.schedule.domain.Schedule;
 import com.momentory.schedule.domain.ScheduleEmotion;
 import com.momentory.schedule.infrastructure.ScheduleRepository;
 import com.momentory.user.application.AuthenticatedUserNotFoundException;
-import com.momentory.user.domain.User;
 import com.momentory.user.infrastructure.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +28,7 @@ public class ScheduleService {
     @Transactional(readOnly = true)
     public List<ScheduleResult> getSchedules(Long userId, LocalDate date) {
         requireUser(userId);
-        return scheduleRepository.findByUser_IdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderAscIdAsc(userId, date)
+        return scheduleRepository.findByUserIdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderAscIdAsc(userId, date)
                 .stream()
                 .map(ScheduleResult::from)
                 .toList();
@@ -37,20 +36,20 @@ public class ScheduleService {
 
     @Transactional
     public ScheduleResult createManualSchedule(Long userId, LocalDate date, String title) {
-        User user = requireUser(userId);
+        requireUser(userId);
         long displayOrder = scheduleRepository
-                .findTopByUser_IdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderDesc(userId, date)
+                .findTopByUserIdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderDesc(userId, date)
                 .map(schedule -> schedule.getDisplayOrder() + 1)
                 .orElse(0L);
 
-        Schedule schedule = scheduleRepository.save(Schedule.createManual(user, date, title, displayOrder));
+        Schedule schedule = scheduleRepository.save(Schedule.createManual(userId, date, title, displayOrder));
         return ScheduleResult.from(schedule);
     }
 
     @Transactional
     public ScheduleResult updateManualSchedule(Long userId, Long scheduleId, LocalDate date, String title) {
         requireUser(userId);
-        Schedule schedule = scheduleRepository.findByIdAndUser_IdAndExternalIdIsNullAndDeletedAtIsNull(scheduleId, userId)
+        Schedule schedule = scheduleRepository.findByIdAndUserIdAndExternalIdIsNullAndDeletedAtIsNull(scheduleId, userId)
                 .orElseThrow(ScheduleNotFoundException::new);
         schedule.update(date, title);
         return ScheduleResult.from(schedule);
@@ -59,7 +58,7 @@ public class ScheduleService {
     @Transactional
     public void deleteSchedule(Long userId, Long scheduleId) {
         requireUser(userId);
-        Schedule schedule = scheduleRepository.findByIdAndUser_Id(scheduleId, userId)
+        Schedule schedule = scheduleRepository.findByIdAndUserId(scheduleId, userId)
                 .orElseThrow(ScheduleNotFoundException::new);
         schedule.delete(Instant.now());
     }
@@ -67,7 +66,7 @@ public class ScheduleService {
     @Transactional
     public ScheduleCompletionResult changeCompletion(Long userId, Long scheduleId, boolean completed, ScheduleEmotion emotion) {
         requireUser(userId);
-        Schedule schedule = scheduleRepository.findByIdAndUser_IdAndDeletedAtIsNull(scheduleId, userId)
+        Schedule schedule = scheduleRepository.findByIdAndUserIdAndDeletedAtIsNull(scheduleId, userId)
                 .orElseThrow(ScheduleNotFoundException::new);
         schedule.changeCompletion(completed, emotion);
         return ScheduleCompletionResult.from(schedule);
@@ -94,7 +93,7 @@ public class ScheduleService {
 
         Set<Long> requestedScheduleIds = Set.copyOf(scheduleIds);
         Set<Long> activeScheduleIds = scheduleRepository
-                .findByUser_IdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderAscIdAsc(userId, date)
+                .findByUserIdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderAscIdAsc(userId, date)
                 .stream()
                 .map(Schedule::getId)
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
@@ -109,8 +108,8 @@ public class ScheduleService {
         }
     }
 
-    private User requireUser(Long userId) {
-        return userRepository.findById(userId)
+    private void requireUser(Long userId) {
+        userRepository.findById(userId)
                 .orElseThrow(AuthenticatedUserNotFoundException::new);
     }
 }

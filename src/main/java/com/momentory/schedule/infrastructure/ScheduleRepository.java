@@ -9,13 +9,13 @@ import java.util.Optional;
 
 public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
-    List<Schedule> findByUser_IdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderAscIdAsc(Long userId, LocalDate scheduleDate);
+    List<Schedule> findByUserIdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderAscIdAsc(Long userId, LocalDate scheduleDate);
 
-    Optional<Schedule> findTopByUser_IdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderDesc(Long userId, LocalDate scheduleDate);
+    Optional<Schedule> findTopByUserIdAndScheduleDateAndDeletedAtIsNullOrderByDisplayOrderDesc(Long userId, LocalDate scheduleDate);
 
-    Optional<Schedule> findByIdAndUser_Id(Long id, Long userId);
+    Optional<Schedule> findByIdAndUserId(Long id, Long userId);
 
-    Optional<Schedule> findByIdAndUser_IdAndDeletedAtIsNull(Long id, Long userId);
+    Optional<Schedule> findByIdAndUserIdAndDeletedAtIsNull(Long id, Long userId);
 
-    Optional<Schedule> findByIdAndUser_IdAndExternalIdIsNullAndDeletedAtIsNull(Long id, Long userId);
+    Optional<Schedule> findByIdAndUserIdAndExternalIdIsNullAndDeletedAtIsNull(Long id, Long userId);
 }

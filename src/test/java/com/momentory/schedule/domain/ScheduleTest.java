@@ -1,6 +1,5 @@
 package com.momentory.schedule.domain;
 
-import com.momentory.user.domain.User;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -13,7 +12,7 @@ class ScheduleTest {
 
     @Test
     void createsAndUpdatesManualScheduleWithTrimmedTitle() {
-        Schedule schedule = Schedule.createManual(User.create(), LocalDate.of(2026, 8, 10), " 운동하기 ", 0L);
+        Schedule schedule = Schedule.createManual(1L, LocalDate.of(2026, 8, 10), " 운동하기 ", 0L);
 
         schedule.update(LocalDate.of(2026, 8, 11), " 저녁 운동하기 ");
 
@@ -25,15 +24,15 @@ class ScheduleTest {
 
     @Test
     void rejectsBlankAndTooLongTitles() {
-        assertThatThrownBy(() -> Schedule.createManual(User.create(), LocalDate.now(), "   ", 0L))
+        assertThatThrownBy(() -> Schedule.createManual(1L, LocalDate.now(), "   ", 0L))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> Schedule.createManual(User.create(), LocalDate.now(), "a".repeat(256), 0L))
+        assertThatThrownBy(() -> Schedule.createManual(1L, LocalDate.now(), "a".repeat(256), 0L))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void recordsDeletionOnlyOnce() {
-        Schedule schedule = Schedule.createManual(User.create(), LocalDate.now(), "운동하기", 0L);
+        Schedule schedule = Schedule.createManual(1L, LocalDate.now(), "운동하기", 0L);
         Instant firstDeletedAt = Instant.parse("2026-08-10T00:00:00Z");
 
         schedule.delete(firstDeletedAt);
@@ -45,7 +44,7 @@ class ScheduleTest {
 
     @Test
     void changesCompletionAndClearsEmotionWhenCompletionIsCancelled() {
-        Schedule schedule = Schedule.createManual(User.create(), LocalDate.now(), "운동하기", 0L);
+        Schedule schedule = Schedule.createManual(1L, LocalDate.now(), "운동하기", 0L);
 
         schedule.changeCompletion(true, ScheduleEmotion.PROUD);
 
@@ -60,7 +59,7 @@ class ScheduleTest {
 
     @Test
     void rejectsEmotionForIncompleteSchedule() {
-        Schedule schedule = Schedule.createManual(User.create(), LocalDate.now(), "운동하기", 0L);
+        Schedule schedule = Schedule.createManual(1L, LocalDate.now(), "운동하기", 0L);
 
         assertThatThrownBy(() -> schedule.changeCompletion(false, ScheduleEmotion.PROUD))
                 .isInstanceOf(IllegalArgumentException.class);
