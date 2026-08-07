@@ -4,6 +4,8 @@ import com.momentory.common.persistence.BaseTimeEntity;
 import com.momentory.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -42,8 +44,9 @@ public class Schedule extends BaseTimeEntity {
     @Column(nullable = false)
     private boolean completed;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
-    private String emotion;
+    private ScheduleEmotion emotion;
 
     @Column(name = "display_order", nullable = false)
     private long displayOrder;
@@ -77,6 +80,18 @@ public class Schedule extends BaseTimeEntity {
         }
     }
 
+    public void changeCompletion(boolean completed, ScheduleEmotion emotion) {
+        if (!completed && emotion != null) {
+            throw new IllegalArgumentException("emotion must be null when schedule is not completed");
+        }
+        this.completed = completed;
+        this.emotion = completed ? emotion : null;
+    }
+
+    public void changeDisplayOrder(long displayOrder) {
+        this.displayOrder = displayOrder;
+    }
+
     public boolean isDeleted() {
         return deletedAt != null;
     }
@@ -97,8 +112,12 @@ public class Schedule extends BaseTimeEntity {
         return completed;
     }
 
-    public String getEmotion() {
+    public ScheduleEmotion getEmotion() {
         return emotion;
+    }
+
+    public boolean belongsTo(Long userId) {
+        return user.getId().equals(userId);
     }
 
     public long getDisplayOrder() {

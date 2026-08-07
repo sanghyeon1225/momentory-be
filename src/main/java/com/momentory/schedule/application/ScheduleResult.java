@@ -1,6 +1,7 @@
 package com.momentory.schedule.application;
 
 import com.momentory.schedule.domain.Schedule;
+import com.momentory.schedule.domain.ScheduleEmotion;
 
 import java.time.LocalDate;
 
@@ -9,7 +10,7 @@ public record ScheduleResult(
         LocalDate date,
         String title,
         boolean completed,
-        String emotion,
+        ScheduleEmotion emotion,
         long displayOrder
 ) {
 

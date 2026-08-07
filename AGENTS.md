@@ -35,34 +35,30 @@ Before modifying code:
 
 The project uses feature-centered packages inside each top-level domain.
 
+The structure below is illustrative, not exhaustive. Before adding or moving packages, inspect the current source tree and follow the structure of the closest existing domain.
+
 ```text
 com.momentory
 ├─ auth
-│  ├─ kakao
-│  │  ├─ application
-│  │  ├─ infrastructure
-│  │  └─ presentation
-│  ├─ token
-│  │  ├─ domain
-│  │  ├─ application
-│  │  ├─ infrastructure
-│  │  └─ presentation
-│  ├─ logout
-│  │  ├─ application
-│  │  └─ presentation
-│  ├─ presentation
-│  └─ security
+│  └─ <feature>
+│     ├─ domain            # when the feature owns meaningful domain state/rules
+│     ├─ application
+│     ├─ infrastructure    # when persistence or external integrations are needed
+│     └─ presentation
 │
 ├─ user
 │  ├─ domain
 │  ├─ infrastructure
 │  ├─ application
-│  ├─ me
-│  │  ├─ application
-│  │  └─ presentation
-│  └─ onboarding
+│  └─ <feature>
 │     ├─ application
 │     └─ presentation
+│
+├─ <domain>
+│  ├─ domain
+│  ├─ application
+│  ├─ infrastructure
+│  └─ presentation
 │
 ├─ common
 └─ config
@@ -70,9 +66,15 @@ com.momentory
 
 Rules:
 
+- The package tree above is a structural guideline, not an exhaustive inventory of current packages.
+- Inspect the existing source tree before creating a package and follow the closest established pattern.
+- Do not update `AGENTS.md` merely because a new feature package was added.
+- Update this architecture section only when the project's package conventions or dependency rules change.
 - Place feature-specific code inside its feature package; add shared code only for genuinely shared concepts.
 - Do not move code to a shared package merely to avoid imports.
-- Do not accumulate unrelated features in top-level `application` or `presentation`, create unnecessary subpackages such as `controller`, `request`, `response`, or `service`, or add package layers without a clear responsibility.
+- Do not accumulate unrelated features in top-level `application` or `presentation`.
+- Do not create unnecessary subpackages such as `controller`, `request`, `response`, or `service`.
+- Do not add package layers without a clear responsibility.
 - Tests should generally follow the same package structure as production code.
 
 ## Dependency Direction
@@ -116,6 +118,9 @@ Rules:
 - Swagger/OpenAPI documentation must match actual runtime behavior.
 - Success responses must reference the correct success DTO; error responses must explicitly reference the actual error DTO.
 - Do not let springdoc infer a success DTO for an error status, and document only status codes the API can return.
+- Every non-2xx response must declare the correct error schema and at least one explicit `ExampleObject`; error documentation that specifies only a schema is not allowed.
+- Every error example's `code` and `message` must match an actual runtime response; when an endpoint has a more specific application error code, do not replace it with a generic `INVALID_REQUEST` example.
+- When adding or changing an endpoint, update and verify its OpenAPI contract test.
 - A `204` response must not define a content schema. When changing OpenAPI annotations, verify `/v3/api-docs`.
 
 ## JPA and Flyway

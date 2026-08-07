@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -98,5 +99,84 @@ public class ScheduleController {
     @DeleteMapping("/{scheduleId}")
     public void deleteSchedule(@Login LoginPrincipal principal, @PathVariable Long scheduleId) {
         scheduleService.deleteSchedule(principal.userId(), scheduleId);
+    }
+
+    @Operation(summary = "일정 완료 및 감정 변경")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "완료 상태 변경 성공", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ScheduleCompletionResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ScheduleErrorResponse.class), examples = {
+                    @ExampleObject(name = "INVALID_REQUEST", value = """
+                            {
+                              "code": "INVALID_REQUEST",
+                              "message": "잘못된 요청입니다."
+                            }
+                            """),
+                    @ExampleObject(name = "INVALID_REQUEST_COMPLETION_EMOTION", value = """
+                            {
+                              "code": "INVALID_REQUEST",
+                              "message": "emotion must be null when completed is false"
+                            }
+                            """)
+            })),
+            @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthErrorResponse.class), examples = @ExampleObject(name = "AUTHENTICATION_REQUIRED", value = """
+                    {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                    """))),
+            @ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ScheduleErrorResponse.class), examples = @ExampleObject(name = "SCHEDULE_NOT_FOUND", value = """
+                    {
+                      "code": "SCHEDULE_NOT_FOUND",
+                      "message": "일정을 찾을 수 없습니다."
+                    }
+                    """)))
+    })
+    @PutMapping(value = "/{scheduleId}/completion", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ScheduleCompletionResponse changeCompletion(
+            @Login LoginPrincipal principal,
+            @PathVariable Long scheduleId,
+            @Valid @RequestBody ScheduleCompletionRequest request
+    ) {
+        return ScheduleCompletionResponse.from(scheduleService.changeCompletion(
+                principal.userId(), scheduleId, request.completed(), request.emotion()
+        ));
+    }
+
+    @Operation(summary = "같은 날짜의 일정 순서 변경")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "일정 순서 변경 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ScheduleErrorResponse.class), examples = {
+                    @ExampleObject(name = "INVALID_REQUEST", value = """
+                            {
+                              "code": "INVALID_REQUEST",
+                              "message": "잘못된 요청입니다."
+                            }
+                            """),
+                    @ExampleObject(name = "INVALID_SCHEDULE_ORDER", value = """
+                            {
+                              "code": "INVALID_REQUEST",
+                              "message": "Invalid schedule order request."
+                            }
+                            """)
+            })),
+            @ApiResponse(responseCode = "401", description = "인증 필요", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = AuthErrorResponse.class), examples = @ExampleObject(name = "AUTHENTICATION_REQUIRED", value = """
+                    {
+                      "code": "AUTHENTICATION_REQUIRED",
+                      "message": "인증이 필요합니다."
+                    }
+                    """))),
+            @ApiResponse(responseCode = "404", description = "일정을 찾을 수 없음", content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ScheduleErrorResponse.class), examples = @ExampleObject(name = "SCHEDULE_NOT_FOUND", value = """
+                    {
+                      "code": "SCHEDULE_NOT_FOUND",
+                      "message": "일정을 찾을 수 없습니다."
+                    }
+                    """)))
+    })
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PatchMapping(value = "/order", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public void changeScheduleOrder(@Login LoginPrincipal principal, @Valid @RequestBody ScheduleOrderRequest request) {
+        scheduleService.changeScheduleOrder(principal.userId(), request.date(), request.scheduleIds());
     }
 }

@@ -42,4 +42,27 @@ class ScheduleTest {
         assertThat(schedule.isDeleted()).isTrue();
         assertThat(schedule.getDeletedAt()).isEqualTo(firstDeletedAt);
     }
+
+    @Test
+    void changesCompletionAndClearsEmotionWhenCompletionIsCancelled() {
+        Schedule schedule = Schedule.createManual(User.create(), LocalDate.now(), "운동하기", 0L);
+
+        schedule.changeCompletion(true, ScheduleEmotion.PROUD);
+
+        assertThat(schedule.isCompleted()).isTrue();
+        assertThat(schedule.getEmotion()).isEqualTo(ScheduleEmotion.PROUD);
+
+        schedule.changeCompletion(false, null);
+
+        assertThat(schedule.isCompleted()).isFalse();
+        assertThat(schedule.getEmotion()).isNull();
+    }
+
+    @Test
+    void rejectsEmotionForIncompleteSchedule() {
+        Schedule schedule = Schedule.createManual(User.create(), LocalDate.now(), "운동하기", 0L);
+
+        assertThatThrownBy(() -> schedule.changeCompletion(false, ScheduleEmotion.PROUD))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

@@ -109,6 +109,18 @@ class OpenApiContractIntegrationTest {
         assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "400", "ScheduleErrorResponse");
         assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "401", "AuthErrorResponse");
         assertErrorResponse(apiDocs, "/api/v1/schedules/{scheduleId}", "delete", "404", "ScheduleErrorResponse");
+
+        assertResponseSchema(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "200", "ScheduleCompletionResponse");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "400", "ScheduleErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "400", "ScheduleErrorResponse", "INVALID_REQUEST_COMPLETION_EMOTION", "INVALID_REQUEST", "emotion must be null when completed is false");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/{scheduleId}/completion", "put", "404", "ScheduleErrorResponse", "SCHEDULE_NOT_FOUND", "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
+
+        assertNoResponseContent(apiDocs, "/api/v1/schedules/order", "patch", "204");
+        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "400", "ScheduleErrorResponse", "INVALID_REQUEST", "INVALID_REQUEST", "잘못된 요청입니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "400", "ScheduleErrorResponse", "INVALID_SCHEDULE_ORDER", "INVALID_REQUEST", "Invalid schedule order request.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "401", "AuthErrorResponse", "AUTHENTICATION_REQUIRED", "AUTHENTICATION_REQUIRED", "인증이 필요합니다.");
+        assertErrorExample(apiDocs, "/api/v1/schedules/order", "patch", "404", "ScheduleErrorResponse", "SCHEDULE_NOT_FOUND", "SCHEDULE_NOT_FOUND", "일정을 찾을 수 없습니다.");
     }
 
     @Test
@@ -170,6 +182,23 @@ class OpenApiContractIntegrationTest {
         }
     }
 
+    private void assertErrorExample(
+            JsonNode apiDocs,
+            String path,
+            String method,
+            String responseCode,
+            String expectedSchema,
+            String exampleName,
+            String expectedCode,
+            String expectedMessage
+    ) {
+        assertResponseSchema(apiDocs, path, method, responseCode, expectedSchema);
+        JsonNode value = response(apiDocs, path, method, responseCode)
+                .at("/content/application~1json/examples/" + exampleName + "/value");
+        assertThat(value.path("code").stringValue()).isEqualTo(expectedCode);
+        assertThat(value.path("message").stringValue()).isEqualTo(expectedMessage);
+    }
+
     private void assertNoResponseContent(JsonNode apiDocs, String path, String method, String responseCode) {
         assertThat(response(apiDocs, path, method, responseCode).has("content")).isFalse();
     }
@@ -211,7 +240,9 @@ class OpenApiContractIntegrationTest {
         SCHEDULES_GET("/api/v1/schedules", "get"),
         SCHEDULES_POST("/api/v1/schedules", "post"),
         SCHEDULES_PATCH("/api/v1/schedules/{scheduleId}", "patch"),
-        SCHEDULES_DELETE("/api/v1/schedules/{scheduleId}", "delete");
+        SCHEDULES_DELETE("/api/v1/schedules/{scheduleId}", "delete"),
+        SCHEDULES_COMPLETION("/api/v1/schedules/{scheduleId}/completion", "put"),
+        SCHEDULES_ORDER("/api/v1/schedules/order", "patch");
 
         private final String path;
         private final String method;
@@ -230,7 +261,10 @@ class OpenApiContractIntegrationTest {
         }
 
         boolean allowsNotFound() {
-            return this == SCHEDULES_PATCH || this == SCHEDULES_DELETE;
+            return this == SCHEDULES_PATCH
+                    || this == SCHEDULES_DELETE
+                    || this == SCHEDULES_COMPLETION
+                    || this == SCHEDULES_ORDER;
         }
     }
 }
